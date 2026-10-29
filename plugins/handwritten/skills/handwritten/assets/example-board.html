@@ -1,0 +1,92 @@
+<!-- Пример board: большой холст из областей-фреймов. Собирать: --title "Химия: карта" --format board -->
+<header class="header">
+  <h1 class="title" style="font-size:120px"><span class="hl-green low">Химия</span></h1>
+  <p class="subtitle">- карта курса: от атома до реакций</p>
+</header>
+
+<div class="board" style="--cols:2; --area-w:1300px">
+
+  <section class="area" id="basics" data-label="1. Строение" data-accent="green">
+    <div class="grid" style="--cols:2">
+      <section class="block" data-accent="green">
+        <h2>Атом</h2>
+        <svg class="sketch" width="420" height="200" viewBox="0 0 420 200">
+          <ellipse cx="120" cy="100" rx="96" ry="84" stroke="muted" stroke-width="1.4"/>
+          <ellipse cx="120" cy="100" rx="56" ry="50" stroke="muted" stroke-width="1.4"/>
+          <circle cx="112" cy="96" r="11" fill="red" data-fill-style="solid"/>
+          <circle cx="128" cy="98" r="11" fill="#e98a8a" data-fill-style="solid"/>
+          <circle cx="118" cy="110" r="11" fill="red" data-fill-style="solid"/>
+          <circle cx="176" cy="100" r="7" fill="hl-blue" stroke="blue" stroke-width="1.4" data-fill-style="solid"/>
+          <line x1="184" y1="98" x2="250" y2="70" stroke="muted" stroke-width="1.2" data-arrow="end" data-head="8"/>
+          <text x="256" y="74" font-size="22" fill="blue">электрон (-)</text>
+          <text x="256" y="112" font-size="22" fill="red">протон (+)</text>
+          <text x="256" y="150" font-size="22" fill="muted">нейтрон (0)</text>
+        </svg>
+        <p><b>Атом</b> - наименьшая частица элемента</p>
+      </section>
+      <section class="block" id="bond" data-accent="blue">
+        <h2>Химическая связь</h2>
+        <table class="hand small">
+          <tr><th>тип</th><th>пример</th><th>как</th></tr>
+          <tr><td>ионная</td><td class="formula">Na<sup>+</sup>Cl<sup>-</sup></td><td>передача e<sup>-</sup></td></tr>
+          <tr><td>ковалентная</td><td class="formula">H:H</td><td>общая пара</td></tr>
+          <tr><td>металлическая</td><td class="formula">Fe</td><td>"электронный газ"</td></tr>
+        </table>
+        <p class="note">тип связи задаёт свойства вещества</p>
+      </section>
+    </div>
+  </section>
+
+  <section class="area" id="amount" data-label="2. Количества" data-accent="blue">
+    <div class="grid" style="--cols:2">
+      <section class="block" data-accent="blue">
+        <h2>Моль</h2>
+        <p><span class="big" data-rn="circle" data-color="blue">1 моль</span> = 6,02·10<sup>23</sup> частиц</p>
+        <p class="formula big" style="margin-top:14px">M = <sup>m</sup>/<sub>n</sub></p>
+        <div class="sticky"><b class="ink-red">Запомни</b><br><span class="formula">M(H<sub>2</sub>O) = 18 г/моль</span></div>
+      </section>
+      <section class="block" data-accent="red">
+        <h2>pH</h2>
+        <ul class="hand dash">
+          <li>pH &lt; 7 - <span class="hl-pink">кислая</span></li>
+          <li>pH = 7 - нейтральная</li>
+          <li>pH &gt; 7 - <span class="hl-blue">щелочная</span></li>
+        </ul>
+        <span data-doodle="flask" data-size="70" data-fill="green" class="block-c"></span>
+      </section>
+    </div>
+  </section>
+
+  <section class="area span-2" id="reactions" data-label="3. Реакции" data-accent="purple">
+    <div class="grid" style="--cols:3">
+      <section class="block" data-accent="green">
+        <h2>Типы реакций</h2>
+        <ol class="hand" data-noterm>
+          <li>Соединение <span class="formula small">A + B <i class="to"></i> AB</span></li>
+          <li>Разложение <span class="formula small">AB <i class="to"></i> A + B</span></li>
+          <li>Замещение <span class="formula small">A + BC <i class="to"></i> AC + B</span></li>
+          <li>Обмен <span class="formula small">AB + CD <i class="to"></i> AD + CB</span></li>
+        </ol>
+      </section>
+      <section class="block span-2" data-accent="purple">
+        <h2>Окислительно-восстановительные</h2>
+        <p class="formula big center" style="margin:70px 0">
+          <span id="zn">Zn<sup>0</sup></span> + <span id="cu">Cu<sup>2+</sup></span> <i class="to" style="--len:70px"></i>
+          <span id="zn2">Zn<sup>2+</sup></span> + <span id="cu0">Cu<sup>0</sup></span>
+        </p>
+        <div class="callout small">Окисление и восстановление всегда происходят <span class="hl">одновременно</span></div>
+        <i class="arrow" data-from="#zn@top" data-to="#zn2@top" data-bend="0.22" data-color="red" data-label="-2e<sup>-</sup> окисление"></i>
+        <i class="arrow" data-from="#cu@bottom" data-to="#cu0@bottom" data-bend="-0.3" data-color="blue" data-label="+2e<sup>-</sup> восстановление"></i>
+      </section>
+    </div>
+  </section>
+
+</div>
+
+<i class="arrow" data-from="#bond@bottom" data-to="#reactions@top" data-bend="0.15" data-color="muted" data-dash data-label="связи рвутся и образуются"></i>
+<i class="arrow" data-from="#amount@bottom" data-to="#reactions@top" data-bend="-0.15" data-color="muted" data-dash data-label="считаем по уравнению"></i>
+
+<dl class="glossary">
+  <dt>pH</dt>
+  <dd data-full="водородный показатель"><p>Шкала кислотности от 0 до 14: чем меньше число, тем кислее. 7 - как чистая вода.</p><p>pH = -lg[H<sup>+</sup>]. Шаг на единицу - разница в 10 раз.</p></dd>
+</dl>

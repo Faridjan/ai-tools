@@ -1,0 +1,116 @@
+<!-- Пример фрагмента для hw.py build: показывает все компоненты. Собирать: --title "Химия" --format landscape -->
+<header class="header">
+  <h1 class="title"><span class="hl-green low">Химия</span></h1>
+  <p class="subtitle">- наука о веществах и их превращениях</p>
+  <span class="note" style="margin-left:auto">маленькие шаги - к большим открытиям <span data-doodle="heart" data-size="22" data-color="red"></span></span>
+</header>
+
+<div class="grid" style="--cols:4">
+
+  <section class="block" id="structure" data-accent="green">
+    <h2>Строение вещества</h2>
+    <svg class="sketch" width="300" height="190" viewBox="0 0 300 190">
+      <ellipse cx="110" cy="95" rx="92" ry="80" stroke="muted" stroke-width="1.4"/>
+      <ellipse cx="110" cy="95" rx="55" ry="48" stroke="muted" stroke-width="1.4"/>
+      <circle cx="102" cy="90" r="11" fill="red" data-fill-style="solid"/>
+      <circle cx="118" cy="92" r="11" fill="#e98a8a" data-fill-style="solid"/>
+      <circle cx="108" cy="104" r="11" fill="red" data-fill-style="solid"/>
+      <circle cx="165" cy="95" r="7" fill="hl-blue" stroke="blue" stroke-width="1.4" data-fill-style="solid"/>
+      <circle cx="40" cy="48" r="7" fill="hl-blue" stroke="blue" stroke-width="1.4" data-fill-style="solid"/>
+      <line x1="172" y1="92" x2="212" y2="70" stroke="muted" stroke-width="1.2"/>
+      <text x="216" y="72" font-size="20">электрон (-)</text>
+      <line x1="128" y1="98" x2="212" y2="112" stroke="muted" stroke-width="1.2"/>
+      <text x="216" y="118" font-size="20" fill="#cf4436">протон (+)</text>
+      <text x="216" y="146" font-size="20" fill="#7d828c">нейтрон (0)</text>
+    </svg>
+    <p><b>Атом</b> - наименьшая частица химического элемента</p>
+  </section>
+
+  <section class="block" id="bond" data-accent="blue">
+    <h2>Химическая связь</h2>
+    <div class="cols-3 center small">
+      <div><b>ионная</b><br><span class="formula">Na<sup>+</sup> Cl<sup>-</sup></span><br><span class="muted tiny">передача e<sup>-</sup></span></div>
+      <div><b>ковалентная</b><br><span class="formula">H : H</span><br><span class="muted tiny">общая пара</span></div>
+      <div><b>металлическая</b><br><span class="formula">Fe</span><br><span class="muted tiny" data-tip="В металле атомы отдают внешние электроны в общий котёл. Электроны свободно бегают между ионами, как газ, и склеивают их." data-more="Поэтому металлы проводят ток и тепло, блестят и гнутся, а не колются.">"электронный газ"</span></div>
+    </div>
+    <p class="note" style="margin-top:10px">разные вещества - разные типы связи</p>
+  </section>
+
+  <section class="block" id="types" data-accent="green">
+    <h2>Типы реакций</h2>
+    <ol class="hand" data-noterm>
+      <li>Соединение<br><span class="formula small">A + B <i class="to"></i> AB</span></li>
+      <li>Разложение<br><span class="formula small">AB <i class="to"></i> A + B</span></li>
+      <li>Замещение<br><span class="formula small">A + BC <i class="to"></i> AC + B</span></li>
+      <li>Обмен<br><span class="formula small">AB + CD <i class="to" data-label="t°"></i> AD + CB</span></li>
+    </ol>
+  </section>
+
+  <section class="block" id="signs" data-accent="purple">
+    <h2>Признаки реакции</h2>
+    <ul class="hand check">
+      <li>изменение <span class="hl">цвета</span></li>
+      <li>выделение газа</li>
+      <li>образование <span class="hl-pink">осадка</span></li>
+      <li>тепло или свет</li>
+    </ul>
+    <span data-doodle="flask" data-size="64" data-fill="green" class="float-r"></span>
+    <p class="note">новые вещества образуются всегда</p>
+  </section>
+
+  <section class="block" id="mole" data-accent="blue">
+    <h2>Моль и молярная масса</h2>
+    <p><span class="big" data-rn="circle" data-color="blue" data-padding="6,12">1 моль</span> = 6,02·10<sup>23</sup> частиц <span class="muted small" data-tip="Столько частиц в одном моле любого вещества. Как дюжина - это 12 штук, так моль - это 6,02·10²³ штук.">(число Авогадро)</span></p>
+    <div class="row" style="margin-top:10px">
+      <span class="formula big">M = <sup>m</sup>/<sub>n</sub></span>
+      <span class="small muted">m - масса (г)<br>n - кол-во вещества (моль)</span>
+    </div>
+    <div class="sticky" style="margin-top:22px">
+      <b class="ink-red">Это важно!</b><br>
+      <span class="formula">M(H<sub>2</sub>O) = 18 г/моль</span><br>
+      <span class="formula">M(CO<sub>2</sub>) = 44 г/моль</span>
+    </div>
+  </section>
+
+  <section class="block" id="ph" data-accent="red">
+    <h2>Растворы и pH</h2>
+    <svg class="sketch" width="320" height="86" viewBox="0 0 320 86">
+      <defs><linearGradient id="phg"><stop offset="0" stop-color="#f6a3a3"/><stop offset=".5" stop-color="#f4f1e6"/><stop offset="1" stop-color="#9cc4f0"/></linearGradient></defs>
+      <rect x="10" y="26" width="300" height="20" fill="url(#phg)" data-keep/>
+      <rect x="10" y="26" width="300" height="20" stroke="ink" stroke-width="1.4"/>
+      <text x="4" y="18" font-size="18">0</text><text x="154" y="18" font-size="18">7</text><text x="296" y="18" font-size="18">14</text>
+      <text x="10" y="72" font-size="18" fill="#cf4436">кислая</text>
+      <text x="126" y="72" font-size="18">нейтральная</text>
+      <text x="248" y="72" font-size="18" fill="#2c62b0">щелочная</text>
+    </svg>
+    <ul class="hand dash small">
+      <li><span class="formula">HCl</span> - кислота</li>
+      <li><span class="formula">NaOH</span> - щёлочь</li>
+      <li><span class="formula">H<sub>2</sub>O</span> - нейтральная среда</li>
+    </ul>
+  </section>
+
+  <section class="block span-2" id="redox" data-accent="purple">
+    <h2>Окислительно-восстановительные реакции</h2>
+    <div class="row" style="justify-content:space-between; align-items:center">
+      <p class="formula big" style="margin:64px 0 64px 40px">
+        <span id="zn">Zn<sup>0</sup></span> + <span id="cu">Cu<sup>2+</sup></span> <i class="to" style="--len:70px"></i>
+        <span id="zn2">Zn<sup>2+</sup></span> + <span id="cu0">Cu<sup>0</sup></span>
+      </p>
+      <div class="stack small" style="margin-right:20px">
+        <div><span class="tag" data-box="red" data-tip="Тот, кто забирает электроны. Сам при этом восстанавливается. Здесь это Cu²⁺.">окислитель</span> принимает e<sup>-</sup></div>
+        <div><span class="tag" data-box="blue" data-tip="Тот, кто отдаёт электроны. Сам при этом окисляется. Здесь это Zn.">восстановитель</span> отдаёт e<sup>-</sup></div>
+      </div>
+    </div>
+    <div class="callout small" style="margin-top:34px">Окисление и восстановление всегда происходят <span class="hl">одновременно</span></div>
+    <i class="arrow" data-from="#zn@top" data-to="#zn2@top" data-bend="0.22" data-color="red" data-label="-2e<sup>-</sup> окисление"></i>
+    <i class="arrow" data-from="#cu@bottom" data-to="#cu0@bottom" data-bend="-0.3" data-color="blue" data-label="+2e<sup>-</sup> восстановление"></i>
+  </section>
+
+</div>
+
+
+<dl class="glossary">
+  <dt>pH</dt>
+  <dd data-full="pondus Hydrogenii, водородный показатель"><p>Шкала кислотности от 0 до 14: чем меньше число, тем кислее. 7 - как чистая вода.</p><p>Показывает концентрацию ионов H<sup>+</sup>: pH = -lg[H<sup>+</sup>]. Шаг на единицу - разница в 10 раз: pH 3 в десять раз кислее, чем pH 4.</p></dd>
+</dl>

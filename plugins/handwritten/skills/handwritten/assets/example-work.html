@@ -1,0 +1,164 @@
+<!-- Пример рабочей board: схемы, источники в коде и Jira, словарь, написанный под эту доску.
+     Собирать: --title "Оформление заказа" --format board --jira-base https://example.atlassian.net/browse/
+     Пути в data-src выдуманные: на чужой машине сборка выдаст WARN "источник не найден", это нормально. -->
+<header class="header">
+  <h1 class="title" style="font-size:110px"><span class="hl-blue low">Оформление заказа</span></h1>
+  <p class="subtitle">- от кнопки "Купить" до письма покупателю</p>
+</header>
+
+<div class="board" style="--cols:1; --area-w:1900px">
+
+  <section class="area" id="start" data-label="1. Кто создаёт заказ и что проверяем" data-accent="blue">
+    <div class="grid" style="--cols:2">
+      <section class="block" id="triggers" data-accent="blue"
+        data-src="Создание заказа = ~/projects/shop/api/src/Orders/CreateOrder.php:40-80 ; ~/projects/shop/docs/orders.md ; SHOP-412"
+        data-say="Заказ приходит с сайта, из приложения или повтором из корзины. Дальше всё идёт через одну точку входа.">
+        <h2>Откуда приходит заказ</h2>
+        <p>Заказ создаётся <b>с сайта</b>, <b>из приложения</b> или <b>повтором</b> из корзины. Все три пути идут в один вызов <span class="formula small">POST /orders</span>, и он:</p>
+        <ul class="hand arrow">
+          <li>проверяет корзину и цены</li>
+          <li>резервирует товар на складе</li>
+          <li>запоминает <span class="hl">ключ идемпотентности</span>: второй клик не создаёт второй заказ</li>
+        </ul>
+        <p class="note">двойной клик по "Купить" чинили в SHOP-412</p>
+      </section>
+      <section class="block" id="queues" data-accent="orange"
+        data-src="Очереди = ~/projects/shop/api/config/queues.php ; ~/projects/shop/docs/queues.md">
+        <h2>Три очереди</h2>
+        <p>Тяжёлая работа уходит в RabbitMQ. Очередь выбирается по срочности, каждую разбирают свои воркеры.</p>
+        <div class="vs" data-left="очередь" data-right="когда" data-left-color="orange" data-right-color="ink">
+          <i>orders-hot | покупатель ждёт на странице</i>
+          <i>orders-retry | повтор после сбоя оплаты</i>
+          <i>orders-bulk | импорт оптовых заказов</i>
+        </div>
+        <p class="note">воркеров добавляет HPA по длине очереди</p>
+      </section>
+      <section class="block span-2" id="types" data-accent="green"
+        data-src="~/projects/shop/docs/order-types.md"
+        data-more="Тип заказа определяет, какие шаги он проходит: цифровому товару не нужен склад, предзаказу не нужен резерв до поступления, а подписка повторяет оплату по расписанию.">
+        <h2>Какие бывают заказы</h2>
+        <div class="tree mind">
+          <b>Заказ</b>
+          <ul>
+            <li>обычный<ul><li>картой</li><li>при получении</li></ul></li>
+            <li>предзаказ<ul><li>резерв при поступлении</li></ul></li>
+            <li>подписка<ul><li>оплата раз в месяц</li></ul></li>
+            <li>оптовый<ul><li>B2B, по счёту</li></ul></li>
+            <li>цифровой<ul><li>без склада</li></ul></li>
+          </ul>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="area" id="pipeline" data-label="2. Как идёт оформление" data-accent="purple">
+    <div class="grid" style="--cols:3">
+      <section class="block span-3" id="seq" data-accent="purple"
+        data-src="Шаги заказа = ~/projects/shop/api/src/Orders/Steps ; ~/projects/shop/docs/checkout.md"
+        data-say="Главная идея: деньги списываем только после резерва, а всё медленное делаем в фоне.">
+        <h2>Кто с кем говорит</h2>
+        <div class="seq" data-actors="Сайт, API, RabbitMQ, Склад, Оплата, БД, Почта" data-colors="blue, purple, orange, green, red, ink, purple">
+          <i data-msg="Сайт > API" data-note="кнопка или приложение">POST /orders</i>
+          <i data-msg="API > Склад" data-note="на 15 минут">резерв</i>
+          <i data-msg="API > БД" data-note="статус new">заказ</i>
+          <i data-msg="API > Сайт" data-dash>202 + ссылка на оплату</i>
+          <i data-msg="Сайт > Оплата">платёж</i>
+          <i data-msg="Оплата > API" data-note="webhook">оплачено</i>
+          <i data-divider>деньги получены</i>
+          <i data-msg="API > RabbitMQ" data-note="orders-hot">order_paid</i>
+          <i data-msg="RabbitMQ > Склад" data-note="списать резерв">сборка</i>
+          <i data-msg="RabbitMQ > Почта">письмо покупателю</i>
+        </div>
+      </section>
+      <section class="block" id="statuses" data-accent="purple" data-src="~/projects/shop/docs/order-statuses.md">
+        <h2>Статусы заказа</h2>
+        <div class="timeline v" style="--at-w:74px">
+          <div data-at="new">создан, товар в резерве</div>
+          <div data-at="paid" data-hl>оплачен</div>
+          <div data-at="packed">собран на складе</div>
+          <div data-at="shipped">передан в доставку</div>
+          <div data-at="done" data-color="green">получен</div>
+        </div>
+      </section>
+      <section class="block" id="idem" data-accent="purple"
+        data-more="Ключ идемпотентности генерирует клиент при открытии корзины и шлёт в заголовке. API хранит ключ сутки: повтор с тем же ключом возвращает уже созданный заказ, а не создаёт новый.">
+        <h2>Один клик - один заказ</h2>
+        <p>Сеть рвётся, покупатель жмёт ещё раз. <b>Ключ идемпотентности</b> превращает повтор в безопасную операцию.</p>
+        <div class="vs small" data-left="без ключа" data-right="с ключом" data-left-color="red" data-right-color="green">
+          <i data-label="второй клик">второй заказ | тот же заказ</i>
+          <i data-label="списание">дважды | один раз</i>
+        </div>
+      </section>
+      <section class="block" id="reserve" data-accent="purple" data-src="~/projects/shop/docs/stock.md">
+        <h2>Резерв на 15 минут</h2>
+        <p>Товар держим за покупателем <span class="hl">15 минут</span>. Не оплатил - резерв снимается сам и товар снова в продаже.</p>
+        <p>Деньги списываем только после резерва: нельзя продать то, чего нет.</p>
+        <p class="note">для предзаказа резерв ставится при поступлении</p>
+      </section>
+    </div>
+  </section>
+
+  <section class="area" id="after" data-label="3. Что происходит после" data-accent="green">
+    <div class="grid" style="--cols:3">
+      <section class="block" id="event" data-accent="green"
+        data-src="OrderPaid = ~/projects/shop/api/src/Orders/Events/OrderPaid.php ; Слушатели = ~/projects/shop/api/src/Orders/Listeners ; ~/projects/shop/docs/events.md"
+        data-say="Когда оплата пришла, API публикует order_paid, а склад и почта реагируют каждый сам.">
+        <h2>Событие order_paid</h2>
+        <p>После оплаты API публикует событие. Его слушают склад и почта, друг о друге они не знают.</p>
+        <div class="flow small" data-color="green">
+          <span class="tag">API</span><span class="tag">order_paid</span><span class="tag">Склад</span>
+        </div>
+        <p>Доставка at-least-once: слушатель должен спокойно пережить одно и то же событие дважды.</p>
+      </section>
+      <section class="block" id="recon" data-accent="purple"
+        data-src="~/projects/shop/docs/reconciliation.md"
+        data-more="Сверка ловит платежи, по которым webhook не дошёл: банк деньги списал, а заказ висит в new. Такие заказы переводятся в paid, а покупатель получает письмо с извинением за задержку.">
+        <h2>Сверка с банком</h2>
+        <div class="cycle" data-size="400" data-center="раз в час">
+          <div>таймер 60 мин</div>
+          <div>выписка банка<br><span class="small muted">за последний час</span></div>
+          <div>сравнение с БД<br><span class="small muted">потерянные webhook</span></div>
+          <div>исправить статусы</div>
+        </div>
+      </section>
+      <section class="block" id="gotchas" data-accent="red">
+        <h2>Грабли</h2>
+        <div class="callout small">Возврат денег <span class="hl-pink">не снимает</span> резерв сам - его снимает отдельный шаг (SHOP-418)</div>
+        <ul class="hand dash small">
+          <li><span class="formula">PaymentTimeoutException</span> при оплате - норма, заказ уходит в orders-retry</li>
+          <li>статус в UI отстаёт до минуты: страница опрашивает API раз в минуту</li>
+        </ul>
+      </section>
+    </div>
+  </section>
+</div>
+
+<div class="sticky" style="width:620px; margin:80px 0 0 40px" id="main"
+  data-say="Итог: сначала резерв, потом оплата, а всё медленное - в фоне через очередь и события.">
+  <b class="ink-red">Главное</b><br>
+  Сначала <b>резерв</b>, потом <b>оплата</b>. Повторы гасит ключ идемпотентности, а склад и почта узнают об оплате из события <b>order_paid</b>.
+</div>
+
+<i class="arrow" data-from="#start@bottom" data-to="#pipeline@top" data-bend="0.12" data-color="muted" data-dash data-label="заказ в резерве"></i>
+<i class="arrow" data-from="#pipeline@bottom" data-to="#after@top" data-bend="0.12" data-color="muted" data-dash data-label="order_paid"></i>
+
+<dl class="glossary" data-ignore="POST, БД">
+  <dt>API</dt>
+  <dd data-full="Application Programming Interface"><p>Окно выдачи в столовой: сайт не лезет на кухню, а просит через окно, и ему выдают готовое.</p><p>Здесь это серверная часть магазина: принимает заказ от сайта и приложения, говорит со складом, оплатой и базой.</p></dd>
+  <dt>UI</dt>
+  <dd data-full="User Interface"><p>То, что покупатель видит и нажимает: страницы, кнопки, формы.</p><p>Страница заказа сама спрашивает у API статус раз в минуту, поэтому может чуть отставать.</p></dd>
+  <dt>HPA</dt>
+  <dd data-full="Horizontal Pod Autoscaler"><p>Автоматический найм: очередь растёт - выходят новые работники, спадает - уходят.</p><p>Механизм Kubernetes, который меняет число копий сервиса по нагрузке. Здесь он смотрит на длину очередей заказов.</p></dd>
+  <dt>B2B</dt>
+  <dd data-full="Business to Business"><p>Продажа компаниям, а не людям: оптом и по счёту.</p><p>Такие заказы приходят пачками через импорт, поэтому у них своя очередь orders-bulk и оплата по счёту, а не картой.</p></dd>
+  <dt>RabbitMQ</dt>
+  <dd data-full="RabbitMQ, брокер сообщений"><p>Почтовое отделение между сервисами: один кладёт письмо, другой забирает, когда освободится.</p><p>Хранит задачи в очередях, пока воркеры их не разберут. Если воркер упал, задача не теряется и уходит другому.</p></dd>
+  <dt>webhook</dt>
+  <dd data-full="webhook, обратный вызов по HTTP"><p>Платёжная система сама звонит магазину: "деньги пришли".</p><p>Это HTTP-запрос от внешнего сервиса на адрес магазина. Может не дойти, поэтому раз в час идёт сверка с банком.</p></dd>
+  <dt>ключ идемпотентности</dt><dt>ключом идемпотентности</dt><dt>Ключ идемпотентности</dt>
+  <dd data-full="idempotency key"><p>Номерок в гардеробе: сколько ни показывай его, пальто выдадут одно.</p><p>Уникальная строка, которую клиент шлёт с запросом. Сервер помнит её и на повтор отвечает тем же результатом, а не делает работу ещё раз.</p></dd>
+  <dt>at-least-once</dt>
+  <dd data-full="доставка как минимум один раз"><p>Курьер гарантирует, что посылка дойдёт, но может принести её дважды.</p><p>Брокер не теряет события, но при сбоях повторяет их. Поэтому каждый слушатель проверяет, не обработал ли он это событие раньше.</p></dd>
+  <dt>order_paid</dt>
+  <dd data-full="событие: заказ оплачен"><p>Объявление по громкой связи: "заказ такой-то оплачен", кому надо - реагирует.</p><p>Публикуется после webhook об оплате. Склад по нему собирает заказ, почта шлёт письмо.</p></dd>
+</dl>

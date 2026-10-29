@@ -1,0 +1,19 @@
+{
+  "name": "ai-tools",
+  "owner": { "name": "Faridjan" },
+  "metadata": {
+    "description": "Скилы, хуки и моды для Claude Code"
+  },
+  "plugins": [
+    {
+      "name": "otvety",
+      "source": "./plugins/otvety",
+      "description": "Короткие структурированные ответы по каркасу «шапка / тело / футер», без ИИ-штампов. Скил + хук на каждое сообщение."
+    },
+    {
+      "name": "handwritten",
+      "source": "./plugins/handwritten",
+      "description": "Визуал-конспект в стиле рукописных заметок: HTML-холст как в Miro и PNG."
+    }
+  ]
+}
