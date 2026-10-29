@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Ставит хук формата ответов в ~/.claude (Windows, macOS, Linux).
 // Запуск из любой папки:  node <путь к скиллу>/scripts/install.js
-// Что делает: копирует format-rules.md и format-hook.js в ~/.claude/hooks,
+// Что делает: копирует format-rules.md, format-hook.js и antiai-ru.md в ~/.claude/hooks,
 // добавляет UserPromptSubmit-хук в ~/.claude/settings.json (не трогая остальное).
 const fs = require('fs');
 const path = require('path');
@@ -16,6 +16,8 @@ fs.mkdirSync(hooksDir, { recursive: true });
 for (const name of ['format-rules.md', 'format-hook.js']) {
   fs.copyFileSync(path.join(here, name), path.join(hooksDir, name));
 }
+// Анти-ИИ правила, на которые ссылается format-rules.md (хук подставляет путь).
+fs.copyFileSync(path.join(here, '..', 'references', 'antiai-ru.md'), path.join(hooksDir, 'antiai-ru.md'));
 
 let settings = {};
 if (fs.existsSync(settingsPath)) {
@@ -45,30 +47,7 @@ fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
 console.log('Хук установлен:');
 console.log('  правила  ' + path.join(hooksDir, 'format-rules.md'));
 console.log('  скрипт   ' + hookPath);
+console.log('  анти-ИИ  ' + path.join(hooksDir, 'antiai-ru.md'));
 console.log('  settings ' + settingsPath + (already ? ' (хук уже был)' : ''));
-
-// Humanizer (blader/humanizer): хук ссылается на него, без него работает краткий список.
-// Пропустить: node install.js --no-humanizer
-const humanizerDir = path.join(claudeDir, 'skills', 'humanizer');
-if (process.argv.includes('--no-humanizer')) {
-  console.log('Humanizer пропущен (--no-humanizer).');
-} else if (fs.existsSync(path.join(humanizerDir, 'SKILL.md'))) {
-  console.log('Humanizer уже стоит: ' + humanizerDir);
-} else {
-  console.log('Ставлю humanizer через npx (нужен интернет)...');
-  const { spawnSync } = require('child_process');
-  const npx = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  const r = spawnSync(npx, ['-y', 'skills', 'add', 'blader/humanizer', '--global', '--agent', 'claude-code', '--yes'], {
-    stdio: 'inherit',
-    shell: process.platform === 'win32',
-  });
-  if (r.status === 0 && fs.existsSync(path.join(humanizerDir, 'SKILL.md'))) {
-    console.log('Humanizer установлен: ' + humanizerDir);
-  } else {
-    console.log('Humanizer не встал. Поставь вручную:');
-    console.log('  npx skills add blader/humanizer --global --agent claude-code');
-    console.log('Хук при этом работает по краткому списку запрещённого.');
-  }
-}
 
 console.log('Перезапусти сессию Claude Code, чтобы всё подхватилось.');

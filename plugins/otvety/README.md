@@ -30,7 +30,7 @@
 node ~/.claude/skills/otvety/scripts/install.js
 ```
 
-Скрипт ставит хук в `~/.claude/settings.json` и скилл humanizer (анти-ИИ правила). Нужны node и интернет. Флаг `--no-humanizer` пропускает humanizer. После установки перезапусти сессию Claude Code.
+Скрипт ставит хук в `~/.claude/settings.json` и кладёт рядом анти-ИИ правила. Нужен только node. После установки перезапусти сессию Claude Code.
 
 Путь к скиллу может отличаться: если ставил через claude.ai, он лежит в `~/.claude/skills/synced/otvety`.
 
@@ -40,12 +40,13 @@ node ~/.claude/skills/otvety/scripts/install.js
 |---|---|
 | `SKILL.md` | правила каркаса с пояснениями |
 | `references/examples.md` | образцы ответов, включая «было / стало» |
+| `references/antiai-ru.md` | анти-ИИ правила: русская адаптация humanizer, 26 паттернов с примерами |
 | `scripts/format-rules.md` | сжатые правила, которые хук подмешивает в каждое сообщение |
 | `scripts/format-hook.js` | сам хук |
-| `scripts/install.js` | установщик хука и humanizer |
+| `scripts/install.js` | установщик хука |
 
 ## Настройка под себя
 
 Лимиты слов, метки футера и тон правятся в `scripts/format-rules.md` (для хука) и в `SKILL.md` (для скилла). Перезапуск после правки не нужен, хук читает файл на каждом сообщении.
 
-Humanizer: https://github.com/blader/humanizer
+Анти-ИИ правила адаптированы из [humanizer](https://github.com/blader/humanizer) (MIT, © 2025 Siqi Chen). Отдельно ставить его не нужно. Попросить очеловечить свой текст можно прямо через otvety: "очеловечь текст: ...".
