@@ -17,11 +17,13 @@ description: Правки, предпроизводственный аудит �
 - `references/ldsp-production-rules.md` - производственные правила ЛДСП, раскроя, кромки, крепежа, присадки, сложной обработки (фрезеровка, гнутые панели, спилы под углом), фрагментов и подготовки к чертежам/ЧПУ
 - `references/pitfalls.md` - известные грабли (движок, API, Базис 11.6, фрагменты и производство)
 - `references/api-ref.md` - весь Script API (из официального bazis.d.ts). Примеры кода: `C:\Users\Jarvis\Documents\Bazis11\_claude\ref\BazisSoft-Scripts\`
-- `scripts/README.md` - эталонные исходники агента, lib.js, bz.ps1, генераторов чертежей и образцы команд cmd_*.js (`scripts/examples`). Рабочие копии лежат в `Documents\Bazis11`; после правки рабочего файла обновить эталон здесь
+- `scripts/README.md` - всё исполняемое: агент, lib.js, bz.ps1, генераторы чертежей, образцы команд cmd_*.js (`scripts/examples`), официальные примеры BazisSoft (`scripts/ref`) и установщик `scripts/install.ps1`
 
-Скил ставится плагином `mebel` из `github.com/Faridjan/ai-tools`. Копия в кэше плагинов перезаписывается при обновлении, править её бесполезно. Как вносить правки, описано в скиле `ldsp-furniture-design` (абзац «Где лежат знания»).
+Скил ставится плагином `mebel` из `github.com/Faridjan/ai-tools`, плагин единственный источник скриптов и справочников. `Documents\Bazis11\_claude` это развёрнутая копия и файлы обмена с агентом, её можно удалить и вернуть установщиком. Скрипты править только в репозитории плагина. Как вносить правки, описано в скиле `ldsp-furniture-design` (абзац «Где лежат знания»).
 
 ## Протокол работы
+
+0. Рабочая папка. Если нет `C:\Users\Jarvis\Documents\Bazis11\_claude\bz.ps1` или версия в `_claude\plugin_version.txt` отличается от версии плагина, выполнить `powershell -NoProfile -ExecutionPolicy Bypass -File <папка скила>\scripts\install.ps1`. Если при этом обновился `Claude Agent.js`, попросить пользователя перезапустить агента из меню Скрипты.
 
 1. Статус агента: `powershell -NoProfile -ExecutionPolicy Bypass -File C:\Users\Jarvis\Documents\Bazis11\_claude\bz.ps1 -Status`. Не запущен - попросить пользователя запустить (один клик: меню Скрипты -> Claude Agent). Самому ничего не кликать. В ответе `-Status` есть `CAPS` (agent, scheduler, lib, node, utf8, inspector) и строка `BAZIS responding`. Нужен `agent 3.1` со `scheduler timer` и `lib 4`: если `lib 3`, выполнить `BZ.reload()`. После любой правки `lib.js` прогнать `cmd_selftest.js`. Если запущен `loop` или `BAZIS responding=False` - предупредить пользователя не трогать окно Базиса (Windows может закрыть его как зависший), подробности в `references/pitfalls.md`.
 2. Путь открытой модели и бэкап одной командой: `log(Action.ModelFilename); BZ.backup()` (копия в `_claude\<имя>_BACKUP_yyyyMMdd_HHmmss.b3d`). Бэкап копирует файл с диска, то есть последнее сохранённое состояние: несохранённых правок в нём нет. Если модель ни разу не сохранялась, бэкапа не будет, сказать об этом пользователю.

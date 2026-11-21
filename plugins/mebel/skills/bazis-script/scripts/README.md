@@ -1,10 +1,16 @@
 # Скрипты скила bazis-script
 
-Исходники агента и вспомогательных скриптов. Работают они из рабочей папки Базиса, сюда положены как эталон и для установки на новый компьютер:
-- `Claude Agent.js` скопировать в `Documents\Bazis11\Scripts\`;
-- `lib.js`, `bz.ps1`, `make-spec-xlsx.ps1` и содержимое `drawings\` скопировать в `Documents\Bazis11\_claude\`.
+Здесь лежит всё, что нужно для работы с Базисом: агент, библиотека, запуск команд, генераторы чертежей, образцы команд и официальные примеры BazisSoft. Плагин единственный источник, в `Documents\Bazis11\_claude` живёт только развёрнутая копия и служебные файлы обмена.
 
-После правки рабочего файла в `Bazis11` перенести ту же правку сюда и отправить в репозиторий, иначе эталон отстанет.
+Развернуть или обновить рабочую папку:
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1
+```
+
+`install.ps1` создаёт `Documents\Bazis11\_claude`, кладёт туда `lib.js`, `bz.ps1`, `make-spec-xlsx.ps1`, `agent-loop-fallback.js`, `probe.js`, генераторы из `drawings\`, `cmd_selftest.js`, `cmd_probe_library.js` и `ref\BazisSoft-Scripts`, копирует `Claude Agent.js` в `Documents\Bazis11\Scripts\` и пишет версию плагина в `_claude\plugin_version.txt`. Папку `_claude` можно удалять: установщик её вернёт.
+
+Править скрипты только в репозитории плагина, затем обновить плагин и снова запустить `install.ps1`. Правка в `_claude` пропадёт при следующей установке.
 
 ## Базис
 
