@@ -1,6 +1,8 @@
 {
   "name": "ai-tools",
-  "owner": { "name": "Faridjan" },
+  "owner": {
+    "name": "Faridjan"
+  },
   "metadata": {
     "description": "Скилы, хуки и моды для Claude Code"
   },
@@ -14,6 +16,11 @@
       "name": "handwritten",
       "source": "./plugins/handwritten",
       "description": "Визуал-конспект в стиле рукописных заметок: HTML-холст как в Miro и PNG."
+    },
+    {
+      "name": "mebel",
+      "source": "./plugins/mebel",
+      "description": "Корпусная мебель из ЛДСП и БАЗИС-Мебельщик 11: проектирование со справочниками и работа с моделью Базиса через скрипты."
     }
   ]
 }

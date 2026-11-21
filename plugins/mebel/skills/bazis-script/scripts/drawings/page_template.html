@@ -1,0 +1,124 @@
+<title>Закладная спальня, чертёж шкафа</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --paper:#F2F4F6; --paper-2:#E8ECF0; --ink:#1F2A37; --ink-2:#4B5868; --ink-3:#7A8797;
+  --dim:#2B6CB0; --ldsp:#E8DCC4; --ldsp-edge:#8C7A5B; --hw:#C7D3DF; --hw-edge:#5B7A99;
+  --back:#DDE3E9; --mounted:#F5D9B3; --mounted-edge:#B8763A; --led:#D4A017; --rule:#C9D1DA; --floor:#1F2A37;
+  --facade:#F1E7D3;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#151B23; --paper-2:#1D252F; --ink:#E6EAF0; --ink-2:#B8C2CE; --ink-3:#8593A3;
+    --dim:#7FB2E5; --ldsp:#5A4B36; --ldsp-edge:#C9B48C; --hw:#33465A; --hw-edge:#8FB0D0;
+    --back:#232D38; --mounted:#5A3F22; --mounted-edge:#E0A263; --led:#F0C14B; --rule:#33404E; --floor:#E6EAF0;
+    --facade:#6B5A42;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#151B23; --paper-2:#1D252F; --ink:#E6EAF0; --ink-2:#B8C2CE; --ink-3:#8593A3;
+  --dim:#7FB2E5; --ldsp:#5A4B36; --ldsp-edge:#C9B48C; --hw:#33465A; --hw-edge:#8FB0D0;
+  --back:#232D38; --mounted:#5A3F22; --mounted-edge:#E0A263; --led:#F0C14B; --rule:#33404E; --floor:#E6EAF0;
+  --facade:#6B5A42;
+}
+body{background:var(--paper);color:var(--ink);font-family:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:15px;line-height:1.45;padding-inline:20px;padding-block:24px 48px;max-width:1240px;margin:0 auto}
+h1,h2,h3{font-family:"IBM Plex Sans Condensed","Arial Narrow",sans-serif;text-wrap:balance;margin:0}
+h1{font-size:30px;font-weight:600;letter-spacing:.01em}
+h2{font-size:20px;font-weight:600;margin-block:28px 10px}
+h3{font-size:17px;font-weight:600;display:flex;gap:12px;align-items:baseline;flex-wrap:wap}
+h3 .sub{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-3);font-weight:400}
+.stamp{display:grid;grid-template-columns:1fr auto;gap:8px 24px;align-items:end;border-bottom:2px solid var(--ink);padding-bottom:10px}
+.stamp .meta{display:grid;grid-template-columns:auto auto;gap:2px 16px;font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-2);text-align:right}
+.stamp .meta b{font-weight:500;color:var(--ink)}
+.lead{color:var(--ink-2);margin-block:10px 0;max-width:68ch}
+.views{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.15fr);gap:20px;margin-top:16px}
+@media (max-width:900px){.views{grid-template-columns:1fr}}
+.view{background:var(--paper-2);border:1px solid var(--rule);padding:10px;overflow-x:auto}
+.view .cap{font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);margin-bottom:6px}
+.dwg{width:100%;height:auto;min-width:560px;display:block;font-family:"IBM Plex Mono",monospace}
+.views .view:last-child .dwg{min-width:300px}
+.ldsp{fill:var(--ldsp);stroke:var(--ldsp-edge);stroke-width:.8}
+.ldsp.front{fill:var(--facade)}
+.facade{fill:var(--facade);stroke:var(--ldsp-edge);stroke-width:.8}
+.door{fill:var(--facade);stroke:var(--ldsp-edge);stroke-width:1}
+.hinge{fill:var(--paper);stroke:var(--dim);stroke-width:1.2}
+.push{fill:var(--mounted-edge);stroke:none}
+.edge{fill:var(--ldsp-edge);stroke:none;opacity:.85}
+.edge.front{fill:var(--mounted-edge);opacity:.7}
+.back{fill:var(--back);stroke:none}
+.wall{fill:var(--rule);stroke:none}
+.hw{fill:url(#hatch);stroke:var(--hw-edge);stroke-width:.9}
+.hl{stroke:var(--hw-edge);stroke-width:.7;opacity:.55}
+.mounted{fill:var(--mounted);stroke:var(--mounted-edge);stroke-width:.9;stroke-dasharray:5 3}
+.led{stroke:var(--led);stroke-width:2.2}
+.floor{stroke:var(--floor);stroke-width:1.6}
+.dim{stroke:var(--dim);stroke-width:.8;fill:none}
+.dim.tick{stroke-width:1.1}
+.ext{stroke:var(--dim);stroke-width:.5;opacity:.6}
+text{fill:var(--ink);font-size:10.5px;font-variant-numeric:tabular-nums}
+.dt{fill:var(--dim);font-size:10.5px;font-weight:500}
+.dt2{fill:var(--dim);font-size:9px;font-weight:500}
+.lab{fill:var(--ink);font-size:9.5px}
+.lab2{fill:var(--ink-2);font-size:8.5px}
+.lvl{fill:var(--ink-2);font-size:8px}
+.clr{fill:var(--ink-3);font-size:8px}
+.sec{fill:var(--ink);font-size:11px;font-weight:500;letter-spacing:.04em}
+.legend{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:12px;font-size:13px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:18px;height:11px;border:1px solid var(--ldsp-edge)}
+.tables{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px 28px;margin-top:8px}
+section.sec{min-width:0}
+table{width:100%;border-collapse:collapse;margin-top:6px;font-size:13.5px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--rule);text-align:left;vertical-align:top}
+th{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);font-weight:500}
+td.n,th.n{text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+td.note{color:var(--ink-2)}
+.notes{margin-top:26px;max-width:70ch;color:var(--ink-2)}
+.notes ul{padding-left:18px;margin:6px 0}
+.notes li{margin:3px 0}
+</style>
+<header class="stamp">
+  <div>
+    <h1>Закладная спальня, встроенный шкаф</h1>
+    <p class="lead">Вид спереди без дверей и вид сбоку через секцию 2. Все размеры в мм, отметки от чистого пола. Модель Базис по состоянию на 15.09.2026, файл сохранён. Ниже фасад с дверями: по 5 петель на нижние двери и по 2 на антресольные.</p>
+  </div>
+  <div class="meta">
+    <span>габарит</span><b>2600 × 3030 × 610</b>
+    <span>ниша до планки</span><b>3033</b>
+    <span>материал</span><b>Гикори Шайн светлый 16</b>
+    <span>задняя стенка</span><b>ХДФ 3 накладная</b>
+    <span>масштаб</span><b>по ширине окна</b>
+  </div>
+</header>
+
+<div class="views">
+  <div class="view"><div class="cap">Вид спереди</div>{{FRONT}}</div>
+  <div class="view"><div class="cap">Вид сбоку, секция 2</div>{{SIDE}}</div>
+</div>
+<div class="legend">
+  <span><i style="background:var(--ldsp)"></i> ЛДСП 16, лицевые пласти</span>
+  <span><i style="background:var(--facade)"></i> фасады ящиков, цоколь, фальшпланки</span>
+  <span><i style="background:var(--hw);border-color:var(--hw-edge)"></i> фурнитура GTV, DTC, Firmax</span>
+  <span><i style="background:var(--mounted);border-color:var(--mounted-edge);border-style:dashed"></i> смонтировано на объекте, в модели нет</span>
+  <span><i style="background:var(--led);border:none;height:3px"></i> паз 12×5 под LED-ленту</span>
+</div>
+
+<h2>Фасад, двери, петли</h2>
+<div class="view"><div class="cap">Фасад</div>{{FACADE}}</div>
+
+<h2>Уровни по секциям</h2>
+<div class="tables">{{TABLES}}</div>
+
+<div class="notes">
+  <h2>Что учесть</h2>
+  <ul>
+    <li>Корпус 3030 при планке на 3033: запас 3 мм, антресоль заводится под планку.</li>
+    <li>Глубина корпуса 587 (5..592), ХДФ 2..5, фальшпланки и цоколь 594..610. Фасады дверей в модели нет.</li>
+    <li>Нижний корпус и антресоль это отдельные коробы: 2433 и 597. Стойки 2433, стойки антресоли 597, крышка и дно антресоли встречаются на 2433.</li>
+    <li>Гладильная доска: к покупке Firmax FRM5812.430 (300 × 430 × 140, ниша от 385 × 450 × 140), в модели 3D-аналог МДМ IB1135. Отсек под утюг справа от неё: 224 × 334 × 587.</li>
+    <li>Секции 2 и 4 по 562 в свету под GTV SMART 600 (внутренняя ширина по каталогу 560..568), секции 1 и 3 по 662 под SMART 700 (660..668). Корзины и брючницы стоят прямо на стойках без проставок, фальшпланки по 28. Пантографы 545..700. Ящики на DTC D-Motion 500 с доводчиком (DS10500H), короб 548, фасады вкладные 558; до закрытой двери 34 мм, поэтому ручки ящиков с вылетом до 30 мм.</li>
+    <li>Двери с ручками, ручки ставятся по месту. Петли DTC Pivot Star New с доводчиком на планках 81H20AQA: 110° на крайних и антресольных дверях (18 шт), 160° на двух средних дверях, за которыми ящики (10 шт), иначе дверь заходит в проём и мешает ящикам.</li>
+    <li>LED-лента в пазах 12×5: в нижних секциях по стойкам и перегородкам и в низу козырьков, в антресоли по 2 вертикальных паза на секцию во весь просвет 2449..3014, на тех же глубинах 518 и 488 от стены. Провод из антресоли вниз через отверстие в дне антресоли и крышке нижнего корпуса по месту.</li>
+    <li>Полкодержатели Hafele 282.24.720 со штырём в полку: отверстия Ø5 в стойках и Ø5 в полках на 10 мм от стойки сверлит станок по модели. Конфирмат 6,3×50, присадка как у 7×50.</li>
+  </ul>
+</div>
