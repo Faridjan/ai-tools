@@ -123,10 +123,14 @@ function lintRuntime(buf, name) {
   return { errors, warnings };
 }
 
+// The plugin targets Windows, but paths are parsed by hand so the logic is the same on any OS.
+function baseName(p) { return String(p).split(/[\\/]/).pop(); }
+function isAbs(p) { return /^([A-Za-z]:[\\/]|[\\/])/.test(p); }
+function joinTo(dir, rel) { return /\\/.test(dir) || /^[A-Za-z]:/.test(dir) ? path.win32.resolve(dir, rel) : path.resolve(dir, rel); }
 const RUNTIME_JS = /^(lib\.js|claude agent\.js|agent-loop-fallback\.js)$/i;
 const RUNTIME_PS = /^(bz\.ps1|install\.ps1)$/i;
 function kindOf(file) {
-  const base = path.basename(file), dir = file.replace(/\\/g, '/').toLowerCase();
+  const base = baseName(file), dir = file.replace(/\\/g, '/').toLowerCase();
   const ours = dir.indexOf('/_claude/') >= 0 || dir.indexOf('/bazis-script/scripts/') >= 0 || dir.indexOf('/model-review/scripts/') >= 0 || /\/bazis11\/scripts\//.test(dir);
   if (ours && (RUNTIME_JS.test(base) || RUNTIME_PS.test(base))) return 'runtime';
   if (/^cmd_.*\.js$/i.test(base)) return 'command';
@@ -137,7 +141,7 @@ function lintFile(file) {
   const kind = kindOf(file);
   if (!kind || !fs.existsSync(file)) return null;
   const buf = fs.readFileSync(file);
-  return kind === 'runtime' ? lintRuntime(buf, path.basename(file)) : lintCommand(buf.toString('utf8'), path.basename(file));
+  return kind === 'runtime' ? lintRuntime(buf, baseName(file)) : lintCommand(buf.toString('utf8'), baseName(file));
 }
 
 // "… bz.ps1 … -File <path>" -> path of the command file
@@ -147,7 +151,7 @@ function commandFile(cmd, cwd) {
   const m = /-File\s+(?:"([^"]+)"|'([^']+)'|(\S+))/i.exec(cmd.slice(at + 6));
   if (!m) return null;
   const p = m[1] || m[2] || m[3];
-  return path.isAbsolute(p) ? p : path.resolve(cwd || process.cwd(), p);
+  return isAbs(p) ? p : joinTo(cwd || process.cwd(), p);
 }
 
 function reviewNote(cmd) {
@@ -155,7 +159,7 @@ function reviewNote(cmd) {
   if (/review\.ps1/i.test(cmd)) return null;
   let state = 'no review report found';
   try {
-    const m = /([A-Za-z]:[\\/][^"'\s]*?)[\\/]_claude[\\/]/.exec(cmd);
+    const m = /((?:[A-Za-z]:)?[\\/][^"'\s]*?)[\\/]_claude[\\/]/.exec(cmd);
     const bazis = m ? m[1] : path.join(process.env.USERPROFILE || '', 'Documents', 'Bazis11');
     const rep = path.join(bazis, '_claude', 'review', 'review_report.json');
     if (fs.existsSync(rep)) {
@@ -174,7 +178,7 @@ function main() {
   const ev = input.hook_event_name, tool = input.tool_name, ti = input.tool_input || {};
   const say = text => process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: ev, additionalContext: text } }));
   const block = (file, errors) => {
-    process.stderr.write('mebel: ' + path.basename(file) + ' will not work in Bazis (Node 8 inside Bazis 11):\n  ' + errors.join('\n  ') + '\nFix the file' + (ev === 'PreToolUse' ? ' before sending it to the agent.' : '.') + '\n');
+    process.stderr.write('mebel: ' + baseName(file) + ' will not work in Bazis (Node 8 inside Bazis 11):\n  ' + errors.join('\n  ') + '\nFix the file' + (ev === 'PreToolUse' ? ' before sending it to the agent.' : '.') + '\n');
     process.exit(2);
   };
 
@@ -182,7 +186,7 @@ function main() {
     const res = lintFile(ti.file_path);
     if (!res) return;
     if (res.errors.length) block(ti.file_path, res.errors);
-    if (res.warnings.length) say('mebel: check ' + path.basename(ti.file_path) + ' before running it:\n  ' + res.warnings.join('\n  '));
+    if (res.warnings.length) say('mebel: check ' + baseName(ti.file_path) + ' before running it:\n  ' + res.warnings.join('\n  '));
     return;
   }
   if (/^(Bash|PowerShell)$/.test(tool) && typeof ti.command === 'string') {
@@ -190,7 +194,7 @@ function main() {
     const res = file ? lintFile(file) : null;
     if (ev === 'PreToolUse') { if (res && res.errors.length) block(file, res.errors); return; }
     const notes = [];
-    if (res && res.warnings.length) notes.push('mebel: ' + path.basename(file) + ':\n  ' + res.warnings.join('\n  '));
+    if (res && res.warnings.length) notes.push('mebel: ' + baseName(file) + ':\n  ' + res.warnings.join('\n  '));
     const rn = reviewNote(ti.command); if (rn) notes.push(rn);
     if (notes.length) say(notes.join('\n'));
   }

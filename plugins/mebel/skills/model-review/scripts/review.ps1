@@ -23,6 +23,11 @@ param(
     [int]$TimeoutSec = 300
 )
 $ErrorActionPreference = 'Stop'
+# Started from PowerShell 7: the nested Windows PowerShell 5.1 would inherit PSModulePath of 7 and lose
+# its own cmdlets (ConvertFrom-Json and others). Give the children the machine-wide path.
+if ($PSVersionTable.PSVersion.Major -ge 6) {
+    $env:PSModulePath = [Environment]::GetEnvironmentVariable('PSModulePath', 'Machine')
+}
 $here    = $PSScriptRoot
 $work    = Join-Path $Bazis '_claude'
 $bz      = Join-Path $work 'bz.ps1'

@@ -77,7 +77,7 @@ test('command file is found in a bz.ps1 call', () => {
   assert.strictEqual(lint.commandFile('powershell -NoProfile -File C:\\B\\_claude\\bz.ps1 -File "C:\\B\\_claude\\cmd a.js" -NoInspect'), 'C:\\B\\_claude\\cmd a.js');
   assert.strictEqual(lint.commandFile('powershell -File C:\\B\\_claude\\bz.ps1 -Status'), null);
   assert.strictEqual(lint.commandFile('git status'), null);
-  assert.strictEqual(lint.commandFile('powershell -File bz.ps1 -File cmd_r.js', 'C:\\B\\_claude'), path.resolve('C:\\B\\_claude', 'cmd_r.js'));
+  assert.strictEqual(lint.commandFile('powershell -File bz.ps1 -File cmd_r.js', 'C:\\B\\_claude'), 'C:\\B\\_claude\\cmd_r.js');
 });
 
 test('hook: broken command written -> exit 2 with the reason', () => {

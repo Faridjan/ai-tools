@@ -28,8 +28,16 @@ def text(raw):
         return raw.decode("oem", "replace")
 
 
-def ps(script, *args, cwd=None, timeout=120):
+def child_env():
+    """Окружение для Windows PowerShell 5.1. PSModulePath от PowerShell 7 (так запускает GitHub Actions)
+    ломает в нём автозагрузку модулей, поэтому переменную убираем: 5.1 возьмёт свою."""
     env = dict(os.environ, BZ_HOST_PROCESS="node")
+    env.pop("PSModulePath", None)
+    return env
+
+
+def ps(script, *args, cwd=None, timeout=120):
+    env = child_env()
     r = subprocess.run(PS + [script] + list(args), capture_output=True, cwd=cwd, env=env, timeout=timeout)
     return r.returncode, text(r.stdout) + text(r.stderr)
 
@@ -132,7 +140,7 @@ class EndToEnd(unittest.TestCase):
     def test_08_parallel_sessions_do_not_clobber(self):
         a = self.cmd("cmd_t_a.js", "const t = Date.now(); while (Date.now() - t < 1500) {} 'marker-A';")
         b = self.cmd("cmd_t_b.js", "'marker-B';")
-        env = dict(os.environ, BZ_HOST_PROCESS="node")
+        env = child_env()
         pa = subprocess.Popen(PS + [self.bz, "-File", a], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
         pb = subprocess.Popen(PS + [self.bz, "-File", b], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=env)
         oa, ob = text(pa.communicate(timeout=60)[0]), text(pb.communicate(timeout=60)[0])

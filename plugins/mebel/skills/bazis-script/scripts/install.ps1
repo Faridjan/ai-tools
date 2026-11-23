@@ -83,7 +83,8 @@ function Install-Text([string]$from, [string]$toDir) {
 
 function Get-Sha([string]$p) {
     if (-not (Test-Path -LiteralPath $p)) { return '' }
-    (Get-FileHash -LiteralPath $p -Algorithm SHA256).Hash
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try { [System.BitConverter]::ToString($sha.ComputeHash([System.IO.File]::ReadAllBytes($p))) } finally { $sha.Dispose() }
 }
 $agentTo  = Join-Path $menu 'Claude Agent.js'
 $libTo    = Join-Path $work 'lib.js'
