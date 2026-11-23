@@ -60,6 +60,7 @@
     "min_len": 50,
     "count_by_len": [[60, 1], [550, 2], [1000, 3], [100000, 4]],
     "skip_roles": ["back", "facade"],
+    "shelf_supports_per_side": 2,
     "skip_material_re": "хдф|двп|hdf|оргалит"
   },
 
@@ -72,6 +73,7 @@
     "outside_tol": 60,
     "hinge_count_by_height": [[900, 2], [1600, 3], [2000, 4], [2400, 5], [100000, 6]],
     "hinge_edge_distance": [70, 190],
+    "hinge_extra_from_width": 650,
     "article_re": "\\r\\s*\\S|[A-Za-zА-Яа-я]*\\d{2,}"
   },
 

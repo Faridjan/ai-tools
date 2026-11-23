@@ -236,6 +236,22 @@ class Joints(unittest.TestCase):
         f, _, _ = run(d)
         self.assertIn("J02", f)
 
+    def test_stacked_sides_are_not_a_joint(self):
+        # боковина второго яруса стоит торцом на боковине первого: это не стык под крепёж
+        d = data(); p = copy.deepcopy(panel(d, "Боковина левая"))
+        p.update(id="uS2", name="Боковина антресоли", min=[0, 2000, 0], max=[16, 2600, 500], art="8", ch=600)
+        d["panels"].append(p)
+        self.assertNotIn("J01", run(d)[0])
+
+    def test_shelf_on_two_supports_is_enough(self):
+        d = data(); side, shelf = panel(d, "Боковина левая"), panel(d, "Полка")
+        for q in (shelf,):
+            q["max"][2] = 580          # стык 580 мм: по общей норме три крепежа, полке хватает двух полкодержателей
+        for q in (side, panel(d, "Боковина правая"), panel(d, "Дно"), panel(d, "Крышка")):
+            q["max"][2] = 600
+        f, _, _ = run(d)
+        self.assertFalse(any("Полка" in s for s in f["J02"].items) if "J02" in f else False)
+
     def test_api_missing_is_unchecked(self):
         d = data(); d["fastened"] = None
         f, ready, _ = run(d)
@@ -271,6 +287,32 @@ class Hardware(unittest.TestCase):
         f, ready, _ = run(d)
         self.assertIn("F01", f); self.assertFalse(ready)
         self.assertTrue(any("Панель ИБП" in s for s in f["F01"].items))
+
+    def test_nut_in_a_hole_of_its_screw_is_not_a_clash(self):
+        d = data(); top = panel(d, "Крышка")
+        d["parts"].append({"id": "uN", "path": "90", "name": "Стяжка (гайка)\rN1", "anc": [], "min": [193, 1970, 93], "max": [207, 1999, 107]})
+        f, _, _ = run(d)
+        self.assertIn("F02", f)        # тело в детали без отверстия: замечание
+        d["parts"].append({"id": "uV", "path": "91", "name": "Стяжка (винт)\rV1", "anc": [], "min": [197, 2000, 97], "max": [203, 2010, 103]})
+        d["holes"].append({"owner": "uV", "d": 8, "depth": 16, "p": [200, 2000, 100], "dir": [0, -1, 0]})
+        f, _, _ = run(d)
+        self.assertNotIn("F02", f); self.assertNotIn("F01", f)     # отверстие ответного винта на той же оси: гайка сидит в нём
+
+    def test_hardware_without_holes(self):
+        d = data()
+        d["parts"].append({"id": "uH", "path": "92", "name": "Ручка-скоба\rAVA0049", "anc": [], "min": [390, 900, 518], "max": [396, 1100, 540]})
+        d["parts"].append({"id": "uB", "path": "93", "name": "Тело 1", "anc": [], "min": [100, 900, 100], "max": [120, 950, 120]})
+        d["parts"].append({"id": "uR", "path": "94", "name": "Габаритная рамка", "anc": [], "hidden": True, "min": [0, 0, 0], "max": [1, 1, 1]})
+        f, _, _ = run(d)
+        self.assertTrue(any("Ручка" in s for s in f["M08"].items))
+        self.assertEqual(len(f["M06"].items), 1)
+        self.assertNotIn("M05", f)
+
+    def test_wide_door_needs_one_more_hinge(self):
+        d = data()
+        self.assertNotIn("F06", run(d)[0])
+        cfg = copy.deepcopy(RULES); cfg["hardware"]["hinge_extra_from_width"] = 300
+        self.assertIn("F06", run(d, cfg=cfg)[0])
 
     def test_hardware_outside(self):
         d = data(); p = [p for p in d["parts"] if p["name"] == "Планка"][0]
