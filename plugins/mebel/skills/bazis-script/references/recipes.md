@@ -116,52 +116,31 @@ if (!blk) throw new Error('фрагмент не встал');
 
 ## Предпроизводственный аудит модели (перед раскроем и чертежами)
 
-По чек-листу из `references/ldsp-production-rules.md`: за один запуск находит чужие материалы/кромки от фрагментов, дубли крепежа, нестандартные диаметры отверстий (`d2` под саморезы) и детали, не влезающие в лист.
+Полный аудит делает скил `model-review`. Он собирает данные модели одной командой и прогоняет все проверки, включая те, что раньше делались этим рецептом (чужие материалы и кромки, дубли крепежа, диаметры отверстий, формат листа):
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File <плагин>\skills\model-review\scripts\review.ps1 -Mode handoff -Expect 1200x2400x600 -Hidden left,top,back,bottom
+```
+
+Отчёт: `_claude\review\review_report.md`, деталировка `cutlist.csv`, фурнитура `hardware.csv`. Формат листа для плит без размера в названии (Lamarty, Kronospan 2750x1830) задаётся в `review_rules.json`, ключ `sheet.by_material`.
+
+Отверстия присадки принадлежат объектам фурнитуры, а не панелям: читать `o.Holes` у деталей крепежа и переводить `o.ToGlobal(h.Position)`. Прежний вариант этого рецепта читал `p.Holes` у панелей, ничего не находил и молча сообщал, что отверстий d2 нет.
+
+Быстрый просмотр без полного ревью:
 
 ```js
-// 1. Материалы и кромки (искать лишние декоры от фрагментов, "Белый матовый", "Прозрачный", чужую кромку)
 const m = BZ.materials();
-log('=== ЛДСП / плитные ===');
-for (const s of m.sheets) log(`  ${s.name} [${s.code || '-'}] t=${s.t} -> ${s.panels} шт.`);
-log('=== Кромки ===');
-for (const e of m.edges) log(`  ${e.name} [${e.code || '-'}] t=${e.t} -> ${e.panels} торц.`);
-
-// 2. Уникальные блоки фурнитуры/крепежа (искать дубли евровинтов разных брендов и пустые схемы)
-const fastMap = new Map();
-const emptyBlocks = [];
+for (const s of m.sheets) log(`${s.name} [${s.code || '-'}] t=${s.t}: ${s.panels} дет.`);
+for (const e of m.edges) log(`кромка ${e.name} [${e.code || '-'}] t=${e.t}: ${e.edges} торц.`);
+const holes = new Map();
 for (const it of BZ.all()) {
-  if (BZ.isFastener(it.obj)) {
-    const nm = it.obj.Name || '(без имени)';
-    fastMap.set(nm, (fastMap.get(nm) || 0) + 1);
-  }
-  if (it.obj.List && BZ.list(it.obj).Count === 0) emptyBlocks.push(it.path);
+  const o = it.obj; if (o.List) continue;
+  let H = null; try { H = o.Holes; } catch (e) { continue; }
+  if (!H || !H.Count) continue;
+  for (let j = 0; j < H.Count; j++) { const k = `d${BZ.r(H[j].Diameter)}x${BZ.r(H[j].Depth)}`; holes.set(k, (holes.get(k) || 0) + 1); }
 }
-log('=== Крепёж / фурнитура ===');
-for (const [k, v] of fastMap) log(`  ${k}: ${v}`);
-if (emptyBlocks.length) log('ПУСТЫЕ БЛОКИ (возможный мусор схем):', emptyBlocks);
-
-// 3. Диаметры отверстий присадки (подсветка d2 под саморезы и нестандартных свёрл)
-const holesMap = new Map();
-const d2Panels = [];
-for (const o of BZ.panels()) {
-  const p = BZ.panel(o);
-  if (!p.Holes || !p.Holes.Count) continue;
-  for (let j = 0; j < p.Holes.Count; j++) {
-    const h = p.Holes[j];
-    const key = `d${Math.round(h.Diameter * 10) / 10}x${Math.round(h.Depth * 10) / 10}`;
-    holesMap.set(key, (holesMap.get(key) || 0) + 1);
-    if (h.Diameter <= 2.5 && d2Panels.indexOf(o.Name) === -1) d2Panels.push(o.Name);
-  }
-}
-log('=== Отверстия присадки ===');
-for (const [k, v] of holesMap) log(`  ${k}: ${v} отв.`);
-if (d2Panels.length) log('ВНИМАНИЕ (отверстия <=2.5 мм, уточнить под ЧПУ/евровинт d5x13):', d2Panels);
-
-// 4. Формат листа и пересечения (указать актуальный формат плиты при отсутствии размера в имени материала!)
-// BZ.SHEET = { len: 2750, wid: 1830, trim: 10 };   // раскомментировать для Lamarty/Kronospan
-const chk = BZ.check({ tol: 1 });
-log('=== Геометрия и формат листа ===', chk.length ? chk : 'OK');
-({ sheets: m.sheets.length, edges: m.edges.length, fastTypes: fastMap.size, holeTypes: holesMap.size, checkErrors: chk.length });
+for (const [k, v] of holes) log(`${k}: ${v} отв.`);
+log('геометрия и формат листа:', BZ.check({ tol: 1 }));
 ```
 
 ## Анимация дверей и ящиков

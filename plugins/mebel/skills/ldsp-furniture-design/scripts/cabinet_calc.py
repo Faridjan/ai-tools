@@ -249,6 +249,32 @@ def add_slides_boxes(c, lw, d_avail, fronts_or_boxh, n, t, interior=False):
     return nl
 
 
+def validate_args(a):
+    """Отсекает размеры, из которых корпус не собрать. Раньше -W -5 давал детали с отрицательной шириной и код 0."""
+    bad = []
+    t = getattr(a, "t", 16) or 16
+    body = getattr(a, "type", "cabinet") not in ("drawers", "niche")
+    for flag, name, low in (("W", "ширина -W", 3 * t if body else 1), ("H", "высота -H", 3 * t if body else 1),
+                            ("D", "глубина -D", 50)):
+        v = getattr(a, flag, None)
+        if v and v < low:
+            bad.append("%s = %s: меньше %s мм" % (name, v, low))
+    if t <= 0:
+        bad.append("толщина -t = %s" % t)
+    sections = getattr(a, "sections", None)
+    if isinstance(sections, int) and sections < 1:
+        bad.append("--sections = %s: нужна хотя бы одна секция" % sections)
+    plinth, h = getattr(a, "plinth", None), getattr(a, "H", None)
+    if plinth is not None and (plinth < 0 or (h and plinth >= h - 2 * t)):
+        bad.append("--plinth = %s: цоколь не меньше 0 и ниже корпуса" % plinth)
+    for flag in ("legs", "rail", "gap", "gap_between", "trim", "back_t", "front_t"):
+        v = getattr(a, flag, None)
+        if isinstance(v, (int, float)) and v < 0:
+            bad.append("--%s = %s: отрицательное значение" % (flag.replace("_", "-"), v))
+    if bad:
+        raise SystemExit("ОШИБКА входных данных:\n  " + "\n  ".join(bad))
+
+
 def build_body(a):
     c = Ctx(a)
     t, M = a.t, a.material
@@ -731,6 +757,7 @@ def parse_args(argv=None):
 
 def main():
     a = parse_args()
+    validate_args(a)
 
     if a.type == "niche":
         if not (a.niche_w and a.niche_h and a.niche_d):

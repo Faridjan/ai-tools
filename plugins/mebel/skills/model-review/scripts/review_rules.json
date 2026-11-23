@@ -33,6 +33,7 @@
     "sliver_min_face": 2000,
     "rotated_tol": 1.0,
     "facade_gap": [1.5, 5.0],
+    "facade_gap_spread": 0.5,
     "shelf_span": { "16": 800, "18": 900, "22": 1000, "25": 1100 },
     "shelf_span_hard_factor": 1.25,
     "door_max_width": 600

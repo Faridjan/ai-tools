@@ -87,6 +87,14 @@ class Geometry(unittest.TestCase):
         f, _, _ = run(d)
         self.assertIn("G06", f)
 
+    def test_facade_gaps_must_be_equal(self):
+        d = data(); a = copy.deepcopy(panel(d, "Дверь", 1))
+        a.update(id="uD3", min=[800.0, a["min"][1], a["min"][2]], max=[1198.0, a["max"][1], a["max"][2]])
+        d["panels"].append(a)                      # третья дверь в 2 мм от второй, первые две в 4 мм
+        f, _, _ = run(d)
+        self.assertIn("G09", f)
+        self.assertNotIn("G09", run(data())[0])
+
     def test_shelf_span(self):
         d = data(); p = panel(d, "Полка"); p["max"][0] = p["min"][0] + 1100
         f, _, _ = run(d)

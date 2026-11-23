@@ -285,18 +285,25 @@ class Review:
         # зазоры между фасадами
         fac = [p for p in self.cut if p.get("role") == "facade" and p["_tax"] == 2 and not p["_rot"]]
         glo, ghi = g["facade_gap"]
-        bad = []
+        bad, gaps = [], []
         for a, b in combinations(fac, 2):
             ov = overlap(a, b)
             if ov[2] <= 0:
                 continue
             for ax, other in ((0, 1), (1, 0)):
                 gap = -ov[ax]
+                if 0 <= gap < 30 and ov[other] > 20:
+                    gaps.append((gap, "%s и %s" % (disp(a["name"]), disp(b["name"]))))
                 if 0 <= gap < 30 and ov[other] > 20 and not (glo <= gap <= ghi):
                     bad.append("%s и %s: зазор %s мм по %s" % (disp(a["name"]), disp(b["name"]), fmt(gap), "XY"[ax]))
         if bad:
             self.add("G06", WARN, "Зазор между фасадами вне %s..%s мм" % (fmt(glo), fmt(ghi)), bad,
                      "Обычный зазор 2-4 мм. Меньше: фасады трутся, больше: видна щель.")
+        if gaps and max(g_ for g_, _ in gaps) - min(g_ for g_, _ in gaps) > g["facade_gap_spread"]:
+            self.add("G09", WARN, "Зазоры между фасадами разные: от %s до %s мм"
+                     % (fmt(min(g_ for g_, _ in gaps)), fmt(max(g_ for g_, _ in gaps))),
+                     ["%s: %s мм" % (n, fmt(v)) for v, n in sorted(gaps)],
+                     "Зазор между фасадами и у стены держать одинаковым (правило проекта: 3 мм везде).")
         # полки
         warn, err = [], []
         for p in self.cut:
