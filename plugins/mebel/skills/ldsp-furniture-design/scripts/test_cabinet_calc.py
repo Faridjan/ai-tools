@@ -165,5 +165,26 @@ class Rules(unittest.TestCase):
         self.assertTrue(has(c.warn, "пролёт полки 1050"))
 
 
+class InputValidation(unittest.TestCase):
+    """Регрессия: -W -5 и --sections 0 давали деталировку с отрицательными размерами и код возврата 0."""
+
+    def bad(self, argv):
+        with self.assertRaises(SystemExit) as cm:
+            cc.validate_args(cc.parse_args(argv))
+        self.assertIn("ОШИБКА", str(cm.exception))
+
+    def test_rejects_impossible_sizes(self):
+        self.bad(["-W", "-5", "-H", "2000", "-D", "500"])
+        self.bad(["-W", "800", "-H", "20", "-D", "500"])
+        self.bad(["-W", "800", "-H", "2000", "-D", "30"])
+        self.bad(["-W", "800", "-H", "2000", "-D", "500", "--sections", "0"])
+        self.bad(["-W", "800", "-H", "2000", "-D", "500", "--plinth", "2500"])
+
+    def test_accepts_normal_input(self):
+        cc.validate_args(cc.parse_args(["-W", "800", "-H", "2000", "-D", "500", "--plinth", "70"]))
+        cc.validate_args(cc.parse_args(["--type", "base", "-W", "600", "-D", "560"]))
+        cc.validate_args(cc.parse_args(["--type", "drawers", "-W", "400", "-H", "600", "-D", "500"]))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1,7 +1,7 @@
 # install.ps1 - deploy the bazis-script runtime from the plugin into the Bazis working folder.
 # The plugin is the single source of truth. <Bazis>\_claude is a disposable exchange
-# folder (cmd.js, result.json, dumps, backups) and can be deleted at any time:
-# run this script again to recreate it.
+# folder (cmd.js, result.json, dumps) and can be recreated by running this script again.
+# Careful: BZ.backup() also puts model backups (*_BACKUP_*.b3d) there, so move those out before deleting it.
 #
 # The scripts in the plugin are written for the author's folder (see $author below).
 # On any other machine this installer rewrites that path to the real Bazis folder
@@ -81,6 +81,16 @@ function Install-Text([string]$from, [string]$toDir) {
     [System.IO.File]::WriteAllText($to, $new, $enc)
 }
 
+function Get-Sha([string]$p) {
+    if (-not (Test-Path -LiteralPath $p)) { return '' }
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try { [System.BitConverter]::ToString($sha.ComputeHash([System.IO.File]::ReadAllBytes($p))) } finally { $sha.Dispose() }
+}
+$agentTo  = Join-Path $menu 'Claude Agent.js'
+$libTo    = Join-Path $work 'lib.js'
+$agentOld = Get-Sha $agentTo
+$libOld   = Get-Sha $libTo
+
 # Runtime files the agent and bz.ps1 expect next to each other in _claude
 $flat = @('lib.js', 'bz.ps1', 'make-spec-xlsx.ps1', 'agent-loop-fallback.js', 'probe.js',
           'examples\cmd_selftest.js', 'examples\cmd_probe_library.js')
@@ -106,4 +116,13 @@ Set-Content -LiteralPath (Join-Path $work 'plugin_version.txt') -Value $ver -Enc
 "OK: runtime $ver installed to $work"
 "OK: agent copied to $menu\Claude Agent.js"
 if (-not $same) { "OK: paths rewritten from $author to $Bazis" }
-"NEXT: in Bazis run menu Scripts -> Claude Agent, then $work\bz.ps1 -Status"
+# A running agent keeps the old code in memory: say exactly what has to be reloaded.
+$hb = Join-Path $work 'heartbeat.json'
+$running = (Test-Path -LiteralPath $hb) -and (((Get-Date) - (Get-Item -LiteralPath $hb).LastWriteTime).TotalSeconds -lt 6)
+$agentNew = ($agentOld -ne (Get-Sha $agentTo))
+$libNew   = ($libOld -ne (Get-Sha $libTo))
+if ($running -and $agentNew) { "RESTART: Claude Agent.js changed and the agent is running. Ask the user to stop it (Esc) and start it again from menu Scripts -> Claude Agent" }
+elseif ($running -and $libNew) { "RELOAD: lib.js changed and the agent is running. Run a command with BZ.reload(), then cmd_selftest.js" }
+elseif (-not $running) { "NEXT: in Bazis run menu Scripts -> Claude Agent, then $work\bz.ps1 -Status" }
+else { "OK: the running agent is up to date" }
+"NOTE: model backups (*_BACKUP_*.b3d) live in $work. Move them out before deleting that folder."

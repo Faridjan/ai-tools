@@ -1,0 +1,81 @@
+{
+  "_comment": "Пороги проверки модели. Править здесь или передавать свой файл: review.ps1 -Rules <путь>. Источники значений: references/my-shop.md, practice.md, construction.md, hardware.md скила ldsp-furniture-design и furniture-clearances.md, ldsp-production-rules.md скила bazis-script.",
+
+  "sheet": {
+    "default": [2800, 2070],
+    "trim": 10,
+    "yield": 0.8,
+    "by_material": {},
+    "_note": "Формат берётся из названия материала (2800*2070), иначе из by_material по подстроке названия, иначе default. Для Lamarty и Kronospan задать 2750x1830."
+  },
+
+  "materials": {
+    "no_edge_re": "хдф|двп|hdf|оргалит|фанер|зеркал|стекл",
+    "no_edge_allowed_re": "хдф|двп|hdf|оргалит|мдф|mdf|зеркал|стекл|эмал|плёнк|пленк|шпон",
+    "foreign_max_panels": 3,
+    "foreign_share": 0.1
+  },
+
+  "edges": {
+    "shop_thickness": [0.4, 1, 1.5, 2],
+    "reserve": 0.1,
+    "front_edge_roles": ["side_left", "side_right", "partition", "shelf", "top", "bottom", "plinth", "filler", "facade", "drawer", "other"]
+  },
+
+  "parts": {
+    "min_edged": [100, 60],
+    "max_names_per_finding": 12
+  },
+
+  "geometry": {
+    "overlap_tol": 1.0,
+    "sliver_gap": [0.05, 0.45],
+    "sliver_min_face": 2000,
+    "rotated_tol": 1.0,
+    "facade_gap": [1.5, 5.0],
+    "facade_gap_spread": 0.5,
+    "shelf_span": { "16": 800, "18": 900, "22": 1000, "25": 1100 },
+    "shelf_span_hard_factor": 1.25,
+    "door_max_width": 600
+  },
+
+  "holes": {
+    "mark_depth_below": 5,
+    "blind_depth": [5, 14],
+    "blind_diameter": [3, 35],
+    "through_diameter": [3, 20],
+    "through_extra_diameters": [60],
+    "end_holes": [[4.5, 37], [5, 55], [8, 55]],
+    "self_tapping_max_d": 2.5,
+    "face_tol": 0.8,
+    "edge_clearance": 3,
+    "near_through": 1.5,
+    "duplicate_tol": 1.0,
+    "visible_min_d": 5,
+    "hidden_faces": ["back", "bottom"],
+    "_note": "hidden_faces: наружные стороны изделия, которые не видны (стоят к стене, полу, потолку, соседнему корпусу). Варианты: left, right, top, bottom, front, back. Для шкафа в нише: left, right, top, back, bottom."
+  },
+
+  "joints": {
+    "min_len": 50,
+    "count_by_len": [[60, 1], [550, 2], [1000, 3], [100000, 4]],
+    "skip_roles": ["back", "facade"],
+    "skip_material_re": "хдф|двп|hdf|оргалит"
+  },
+
+  "hardware": {
+    "clash_depth": 1.5,
+    "hinge_re": "петл|hinge|clip|pivot|sensys|blumotion",
+    "slide_re": "направляющ|slide|motion|tandem|movento|versalite|quadro|метабокс|metabox|тандембокс|legrabox|шариков",
+    "handle_re": "ручк|handle|gola|скоб",
+    "ignore_re": "габаритн|рамка",
+    "outside_tol": 60,
+    "hinge_count_by_height": [[900, 2], [1600, 3], [2000, 4], [2400, 5], [100000, 6]],
+    "hinge_edge_distance": [70, 190],
+    "article_re": "\\r\\s*\\S|[A-Za-zА-Яа-я]*\\d{2,}"
+  },
+
+  "names": {
+    "default_re": "^\\s*$|^панель( \\d+)?$|^panel|^объект|^деталь( \\d+)?$"
+  }
+}

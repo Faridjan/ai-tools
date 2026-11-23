@@ -8,7 +8,7 @@
 powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1
 ```
 
-`install.ps1` создаёт `Documents\Bazis11\_claude`, кладёт туда `lib.js`, `bz.ps1`, `make-spec-xlsx.ps1`, `agent-loop-fallback.js`, `probe.js`, генераторы из `drawings\`, `cmd_selftest.js`, `cmd_probe_library.js` и `ref\BazisSoft-Scripts`, копирует `Claude Agent.js` в `Documents\Bazis11\Scripts\` и пишет версию плагина в `_claude\plugin_version.txt`. Папку `_claude` можно удалять: установщик её вернёт.
+`install.ps1` создаёт `Documents\Bazis11\_claude`, кладёт туда `lib.js`, `bz.ps1`, `make-spec-xlsx.ps1`, `agent-loop-fallback.js`, `probe.js`, генераторы из `drawings\`, `cmd_selftest.js`, `cmd_probe_library.js` и `ref\BazisSoft-Scripts`, копирует `Claude Agent.js` в `Documents\Bazis11\Scripts\` и пишет версию плагина в `_claude\plugin_version.txt`. Папку `_claude` можно удалять, установщик её вернёт. Сначала забрать оттуда бэкапы моделей `*_BACKUP_*.b3d`: их кладёт туда `BZ.backup()`. Если агент запущен, установщик пишет, что перезагрузить: `RESTART` (менялся агент) или `RELOAD` (менялся `lib.js`, хватит `BZ.reload()`).
 
 Папка Базиса по умолчанию `%USERPROFILE%\Documents\Bazis11`, другую передать параметром: `install.ps1 -Bazis "D:\Bazis11"`. В исходниках путь записан как `C:\Users\Jarvis\Documents\Bazis11`; если папка другая, установщик при копировании заменяет его на настоящий во всех `.js`, `.ps1` и `.py`. В `lib.js` и агенте русские буквы пути пишутся как `\uXXXX`, потому что Базис читает эти файлы как ANSI.
 
@@ -22,6 +22,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1
 | `lib.js` | библиотека `BZ.*`: поиск объектов, панели, пазы, торцы, перемещение, размеры, снимки и сравнение модели, спецификация, бэкап и сохранение |
 | `bz.ps1` | отправить команду агенту и дождаться ответа: `bz.ps1 -File cmd_xxx.js`, `-Status`, `-Raw`, `-Stop` |
 | `make-spec-xlsx.ps1` | спецификация в Excel |
+| `..\..\model-review\scripts\review.ps1` | полное ревью модели и финальная проверка перед распилом: отчёт, деталировка, фурнитура |
 
 Как пользоваться:
 1. В Базисе открыть модель, запустить Скрипты → Claude Agent.
@@ -43,7 +44,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1
 
 ## Образцы команд
 
-`examples\` содержит готовые `cmd_*.js` из проекта шкафа, брать как основу для новых команд.
+`examples\` содержит готовые `cmd_*.js` из проекта шкафа, брать как основу для новых команд. Имена деталей, координаты и артикулы в них от того проекта, на другой модели без правки они ничего не найдут. То же относится к `drawings\build_spec.py`: заголовок, число листов и пояснения в нём от одного заказа. Универсальную проверку и деталировку даёт `review.ps1`.
 
 | Скрипт | Образец для |
 |---|---|

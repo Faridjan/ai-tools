@@ -1,0 +1,51 @@
+name: mebel tests
+
+on:
+  pull_request:
+    paths: ["plugins/mebel/**", ".github/workflows/mebel-tests.yml"]
+  push:
+    branches: [main]
+    paths: ["plugins/mebel/**", ".github/workflows/mebel-tests.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Rules, lib.js against the mock API, the hook, static checks. On Windows also the end-to-end run:
+      # install.ps1 -> real agent in Node -> real bz.ps1 -> review.ps1.
+      - name: Tests
+        run: python -m unittest discover -s plugins/mebel/tests -v
+
+  version:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      # The plugin is delivered by version: a change without a bump never reaches installed copies.
+      - name: Plugin version is bumped
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if git diff --quiet "$BASE" HEAD -- plugins/mebel; then echo "plugin not changed"; exit 0; fi
+          old=$(git show "$BASE:plugins/mebel/.claude-plugin/plugin.json" | python -c "import json,sys; print(json.load(sys.stdin)['version'])")
+          new=$(python -c "import json; print(json.load(open('plugins/mebel/.claude-plugin/plugin.json', encoding='utf-8'))['version'])")
+          echo "version: $old -> $new"
+          if [ "$old" = "$new" ]; then echo "::error::plugins/mebel changed but the version in plugin.json is still $old"; exit 1; fi

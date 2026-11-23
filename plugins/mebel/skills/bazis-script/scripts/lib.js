@@ -1,5 +1,5 @@
 // ============================================================
-//  Claude helper library for BAZIS-Mebelshik 11 scripts  (v4)
+//  Claude helper library for BAZIS-Mebelshik 11 scripts  (v5)
 //  Loaded by "Claude Agent.js" via system.require at start.
 //  Hot reload inside a running agent: BZ.reload()
 //  Written in conservative ES5 so it loads on any engine; commands
@@ -9,7 +9,7 @@
 // ============================================================
 
 var BZ = {};
-BZ.VERSION = 4;
+BZ.VERSION = 5;
 BZ.DIR = 'C:\\Users\\Jarvis\\Documents\\Bazis11\\_claude\\';
 BZ.EPS = 0.5;
 BZ.autoInspect = true;      // agent runs BZ.inspect() after a command that changed the model
@@ -54,8 +54,11 @@ BZ.esc = function (s) {
     }
     return out;
 };
-BZ.json = function (v, ind, lvl) {
-    ind = ind || 0; lvl = lvl || 0;
+// Depth limit and cycle guard: a command that returns a Bazis object or a self-referencing structure
+// must still produce a result.json (before v5 it threw and bz.ps1 waited for the timeout).
+BZ.JSON_DEPTH = 12;
+BZ.json = function (v, ind, lvl, seen) {
+    ind = ind || 0; lvl = lvl || 0; seen = seen || [];
     var pad = ind ? '\n' + new Array(lvl * ind + 1).join(' ') : '';
     var pad2 = ind ? '\n' + new Array((lvl + 1) * ind + 1).join(' ') : '';
     if (v === null || v === undefined) return 'null';
@@ -63,17 +66,26 @@ BZ.json = function (v, ind, lvl) {
     if (typeof v === 'boolean') return String(v);
     if (typeof v === 'string') return '"' + BZ.esc(v) + '"';
     if (typeof v === 'function') return '"[function]"';
-    if (Object.prototype.toString.call(v) === '[object Array]') {
-        if (!v.length) return '[]';
-        var a = [];
-        for (var i = 0; i < v.length; i++) a.push(pad2 + BZ.json(v[i], ind, lvl + 1));
-        return '[' + a.join(',') + pad + ']';
-    }
     if (typeof v === 'object') {
-        var o = [];
-        for (var k in v) if (v.hasOwnProperty(k)) o.push(pad2 + '"' + BZ.esc(k) + '":' + (ind ? ' ' : '') + BZ.json(v[k], ind, lvl + 1));
-        if (!o.length) return '{}';
-        return '{' + o.join(',') + pad + '}';
+        if (lvl > BZ.JSON_DEPTH) return '"[depth]"';
+        for (var q = 0; q < seen.length; q++) if (seen[q] === v) return '"[circular]"';
+        var tag = Object.prototype.toString.call(v);
+        if (tag === '[object Date]') { try { return '"' + v.toISOString() + '"'; } catch (ed) { return 'null'; } }
+        seen.push(v);
+        var out;
+        try {
+            if (tag === '[object Array]') {
+                var a = [];
+                for (var i = 0; i < v.length; i++) a.push(pad2 + BZ.json(v[i], ind, lvl + 1, seen));
+                out = a.length ? '[' + a.join(',') + pad + ']' : '[]';
+            } else {
+                var o = [];
+                for (var k in v) if (Object.prototype.hasOwnProperty.call(v, k)) o.push(pad2 + '"' + BZ.esc(k) + '":' + (ind ? ' ' : '') + BZ.json(v[k], ind, lvl + 1, seen));
+                out = o.length ? '{' + o.join(',') + pad + '}' : '{}';
+            }
+        } catch (eo) { out = '"[unserializable: ' + BZ.esc(String(eo)) + ']"'; }
+        seen.pop();
+        return out;
     }
     return '"' + BZ.esc(String(v)) + '"';
 };
@@ -102,7 +114,7 @@ BZ.writeCsv = function (name, rows, sep) {
         for (var j = 0; j < rows[i].length; j++) {
             var c = rows[i][j]; if (c === null || c === undefined) c = '';
             c = String(c);
-            if (c.indexOf(sep) >= 0 || c.indexOf('"') >= 0 || c.indexOf('\n') >= 0) c = '"' + c.replace(/"/g, '""') + '"';
+            if (c.indexOf(sep) >= 0 || c.indexOf('"') >= 0 || c.indexOf('\n') >= 0 || c.indexOf('\r') >= 0) c = '"' + c.replace(/"/g, '""') + '"';
             cells.push(c);
         }
         lines.push(cells.join(sep));
@@ -530,11 +542,16 @@ BZ._resize = function (o, axis, newLen, keepMax) {
     var s = BZ.size(o);
     var useCH = BZ.near(p.ContourHeight, s[axis], 1);
     var useCW = BZ.near(p.ContourWidth, s[axis], 1);
-    if (!useCH && !useCW) return false;
-    if (useCH && !useCW) p.ContourHeight = newLen;
-    else if (useCW && !useCH) p.ContourWidth = newLen;
-    else { p.ContourHeight = newLen; }
+    if (!useCH && !useCW) { log('BZ._resize: ' + o.Name + ' no contour side matches the extent ' + BZ.r(s[axis]) + ' on axis ' + axis + ' (rotated or shaped panel), nothing changed'); return false; }
+    var prop = useCH ? 'ContourHeight' : 'ContourWidth', old = p[prop];
+    p[prop] = newLen;
     try { o.Build(); } catch (e) {}
+    // Both sides matched (square panel): ContourHeight was a guess. If the extent did not follow, take the other side.
+    if (useCH && useCW && !BZ.near(BZ.size(o)[axis], newLen, 1)) {
+        p[prop] = old; prop = 'ContourWidth'; p[prop] = newLen;
+        try { o.Build(); } catch (e1) {}
+    }
+    if (!BZ.near(BZ.size(o)[axis], newLen, 1)) log('BZ._resize: ' + o.Name + ' extent on axis ' + axis + ' is ' + BZ.r(BZ.size(o)[axis]) + ', expected ' + newLen + ': check the panel');
     var cur = [o.GabMin.x, o.GabMin.y, o.GabMin.z][axis];
     var target = keepMax ? (hi - newLen) : lo;
     var fix = target - cur;
@@ -749,10 +766,17 @@ BZ.spec = function (fileName) {
         var p = BZ.panel(o); if (!p) continue;
         var L = Math.max(p.ContourWidth, p.ContourHeight), W = Math.min(p.ContourWidth, p.ContourHeight);
         var bt = BZ.butts(p), bs = [];
-        for (var j = 0; j < bt.length; j++) bs.push(bt[j].i + ':' + bt[j].t);
-        bs.sort();
-        var key = [o.Name, p.MaterialName, p.Thickness, BZ.r(L), BZ.r(W), bs.join(',')].join('|');
-        if (!groups[key]) { groups[key] = { name: o.Name, material: p.MaterialName, t: p.Thickness, L: BZ.r(L), W: BZ.r(W), qty: 0, butts: bt.length, buttSig: bs.join(','), cuts: BZ.cuts(p).length, role: BZ.role(o, ctx), rect: true, art: '' }; order.push(key); }
+        var bm = [];
+        for (var j = 0; j < bt.length; j++) { bs.push(bt[j].i + ':' + bt[j].t); bm.push(bt[j].i + ':' + bt[j].t + ':' + bt[j].mat); }
+        bs.sort(); bm.sort();
+        // gl x gw: size along and across the grain. Texture Horizontal (1) runs along ContourWidth, Vertical (2)
+        // along ContourHeight, None (0) has no grain: longer side first. L x W stay "longer x shorter" as before.
+        var tex = 0, gl = L, gw = W;
+        try { tex = Number(p.TextureOrientation) || 0; } catch (et) {}
+        if (tex === 1) { gl = p.ContourWidth; gw = p.ContourHeight; }
+        else if (tex === 2) { gl = p.ContourHeight; gw = p.ContourWidth; }
+        var key = [o.Name, p.MaterialName, p.Thickness, BZ.r(gl), BZ.r(gw), tex, bm.join(',')].join('|');
+        if (!groups[key]) { groups[key] = { name: o.Name, material: p.MaterialName, t: p.Thickness, L: BZ.r(L), W: BZ.r(W), gl: BZ.r(gl), gw: BZ.r(gw), tex: tex, qty: 0, butts: bt.length, buttSig: bs.join(','), cuts: BZ.cuts(p).length, role: BZ.role(o, ctx), rect: true, art: '' }; order.push(key); }
         var g = groups[key]; g.qty++;
         try { if (p.IsContourRectangle === false || (typeof p.IsContourRectangle === 'function' && !p.IsContourRectangle())) g.rect = false; } catch (e) {}
         try { if (o.ArtPos) g.art = o.ArtPos; } catch (e2) {}
@@ -760,8 +784,8 @@ BZ.spec = function (fileName) {
     var rows = [];
     for (i = 0; i < order.length; i++) rows.push(groups[order[i]]);
     if (fileName) {
-        var csv = [['Name', 'Material', 'T', 'L', 'W', 'Qty', 'Butts', 'ButtSig', 'Cuts', 'Role', 'Rect', 'Art']];
-        for (i = 0; i < rows.length; i++) { var r = rows[i]; csv.push([r.name, r.material, r.t, r.L, r.W, r.qty, r.butts, r.buttSig, r.cuts, r.role, r.rect ? 1 : 0, r.art]); }
+        var csv = [['Name', 'Material', 'T', 'L', 'W', 'Qty', 'Butts', 'ButtSig', 'Cuts', 'Role', 'Rect', 'Art', 'GrainL', 'GrainW', 'Tex']];
+        for (i = 0; i < rows.length; i++) { var r = rows[i]; csv.push([r.name, r.material, r.t, r.L, r.W, r.qty, r.butts, r.buttSig, r.cuts, r.role, r.rect ? 1 : 0, r.art, r.gl, r.gw, r.tex]); }
         BZ.writeCsv(fileName, csv);
     }
     return rows;
@@ -792,10 +816,11 @@ BZ.backup = function () {
 
 // Save the open model into its own file. Only when the user asked for it.
 // The previous file is backed up first. Unsaved edits are lost if Bazis closes, so offer this after a series of edits.
-BZ.save = function () {
+BZ.save = function (opts) {
     var file = null; try { file = Action.ModelFilename; } catch (e) {}
     if (!file) throw new Error('BZ.save: the model has no file yet, the user has to save it once in Bazis');
     var bak = BZ.backup();
+    if (!bak && !(opts && opts.noBackup)) throw new Error('BZ.save: backup failed, the file was not overwritten (BZ.save({noBackup: true}) saves anyway)');
     Action.SaveModel(file);
     var now = null; try { now = Action.ModelFilename; } catch (e2) {}
     return { file: file, backup: bak, sameFile: now === file };

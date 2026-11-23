@@ -1,5 +1,5 @@
 // ============================================================
-//  Claude Agent for BAZIS-Mebelshik 11   (v3.1, non-blocking + start trace)
+//  Claude Agent for BAZIS-Mebelshik 11   (v3.2, non-blocking + start trace)
 //  Start it once from menu "Scripts -> Claude Agent".
 //  Polls  _claude\cmd.js  on a timer and executes it, writing  _claude\result.json.
 //  Stops when  _claude\stop.flag  contains "1", on Esc, or after IDLE_MIN minutes idle.
@@ -11,6 +11,9 @@
 //  _claude\agent-loop-fallback.js.
 //  v3.1: every start step is written to _claude\agent_trace.txt, any start error
 //  to _claude\agent_error.json, so a silent failure can be diagnosed.
+//  v3.2: heartbeat.json gets busy=<command id> before a command runs (a command blocks the timer, so
+//  bz.ps1 used to report "agent died" on anything longer than 6 s); result.json is always written,
+//  even when the returned value cannot be serialized.
 // ============================================================
 
 var CLAUDE_DIR = 'C:\\Users\\Jarvis\\Documents\\Bazis11\\_claude\\';
@@ -70,7 +73,7 @@ try { if (typeof global !== 'undefined') { global.BZ = BZ; global.log = log; glo
         caps = BZ.caps();
         caps.mode = BZ.vm ? 'vm' : 'eval';
         caps.utf8 = !!BZ.fs;
-        caps.agent = '3.1';
+        caps.agent = '3.2';
         caps.scheduler = (typeof setInterval === 'function') ? 'timer' : 'asyncexec';
         claudeTrace('3 caps ok, scheduler=' + caps.scheduler);
 
@@ -95,8 +98,15 @@ try { if (typeof global !== 'undefined') { global.BZ = BZ; global.log = log; glo
         try { Action.Finish(); } catch (e) {}
     }
 
+    function beat(now, busyId) {
+        var hb = { ts: now, seq: seq++, done: done, uptimeSec: Math.round((now - started) / 1000), scheduler: caps.scheduler, ticks: ticks };
+        if (busyId) hb.busy = busyId;
+        BZ.writeJson('heartbeat.json', hb);
+    }
+
     function execute(src) {
         var res = { id: readId(), ok: true, startedAt: new Date().toString(), mode: caps.mode };
+        try { beat(new Date().getTime(), res.id || 'cmd'); } catch (eb) {}
         BZ._log = [];
         var t0 = new Date().getTime();
         var before = null;
@@ -127,10 +137,17 @@ try { if (typeof global !== 'undefined') { global.BZ = BZ; global.log = log; glo
         BZ.autoInspect = true;
         res.log = BZ._log;
         res.ms = new Date().getTime() - t0;
-        res.modelSize = BZ.v3(Model.GSize);
-        BZ.writeJson('result.json', res);
+        try { res.modelSize = BZ.v3(Model.GSize); } catch (e6) {}
+        try {
+            BZ.writeJson('result.json', res);
+        } catch (e7) {
+            // never leave bz.ps1 waiting: drop the parts that may not serialize and report why
+            BZ.writeJson('result.json', { id: res.id, ok: false, error: 'result could not be written: ' + String(e7), log: res.log, ms: res.ms, changedCount: res.changedCount });
+        }
         done++;
         lastCmd = new Date().getTime();
+        lastBeat = lastCmd;
+        try { beat(lastCmd, null); } catch (e8) {}
     }
 
     function tick() {
@@ -142,7 +159,7 @@ try { if (typeof global !== 'undefined') { global.BZ = BZ; global.log = log; glo
             var now = new Date().getTime();
             if (now - lastBeat >= HEARTBEAT_MS) {
                 lastBeat = now;
-                BZ.writeJson('heartbeat.json', { ts: now, seq: seq++, done: done, uptimeSec: Math.round((now - started) / 1000), scheduler: caps.scheduler, ticks: ticks });
+                beat(now, null);
             }
             if (stopRequested()) { finish('stop.flag'); return; }
             if (now - lastCmd > IDLE_MIN * 60000) { finish('idle timeout'); return; }
