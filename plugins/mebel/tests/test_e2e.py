@@ -47,7 +47,7 @@ def ps(script, *args, cwd=None, timeout=120):
 class EndToEnd(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.tmp = tempfile.mkdtemp(prefix="mebel-e2e-")
+        cls.tmp = os.path.realpath(tempfile.mkdtemp(prefix="mebel-e2e-"))   # без коротких имён 8.3
         cls.bazis = os.path.join(cls.tmp, "Bazis11")
         os.makedirs(cls.bazis)
         cls.work = os.path.join(cls.bazis, "_claude")
