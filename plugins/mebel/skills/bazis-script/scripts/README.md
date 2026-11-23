@@ -10,6 +10,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File install.ps1
 
 `install.ps1` создаёт `Documents\Bazis11\_claude`, кладёт туда `lib.js`, `bz.ps1`, `make-spec-xlsx.ps1`, `agent-loop-fallback.js`, `probe.js`, генераторы из `drawings\`, `cmd_selftest.js`, `cmd_probe_library.js` и `ref\BazisSoft-Scripts`, копирует `Claude Agent.js` в `Documents\Bazis11\Scripts\` и пишет версию плагина в `_claude\plugin_version.txt`. Папку `_claude` можно удалять: установщик её вернёт.
 
+Папка Базиса по умолчанию `%USERPROFILE%\Documents\Bazis11`, другую передать параметром: `install.ps1 -Bazis "D:\Bazis11"`. В исходниках путь записан как `C:\Users\Jarvis\Documents\Bazis11`; если папка другая, установщик при копировании заменяет его на настоящий во всех `.js`, `.ps1` и `.py`. В `lib.js` и агенте русские буквы пути пишутся как `\uXXXX`, потому что Базис читает эти файлы как ANSI.
+
 Править скрипты только в репозитории плагина, затем обновить плагин и снова запустить `install.ps1`. Правка в `_claude` пропадёт при следующей установке.
 
 ## Базис
