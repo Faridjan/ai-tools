@@ -226,13 +226,17 @@ class Review:
                 self.add("M04", INFO, "Габарит по деталям %s (X x Y x Z) совпадает с заданным" % txt)
         else:
             self.add("M04", INFO, "Габарит по деталям %s (X x Y x Z): сверить с заданием, параметр --expect не передан" % txt)
-        hid = [where(p) for p in self.cut + self.parts if p.get("hidden")]
+        ign = re.compile(self.cfg["hardware"]["ignore_re"], re.I)
+        hid = [where(p) for p in self.cut + self.parts if p.get("hidden") and not ign.search(p["name"])]
         if hid:
             self.add("M05", WARN, "Скрытые объекты: в раскрой и смету они всё равно попадут", hid,
                      "Показать и проверить, либо удалить лишнее.")
-        ign = re.compile(self.cfg["hardware"]["ignore_re"], re.I)
-        loose = [where(p) for p in self.parts if not p.get("anc") and not ign.search(p["name"])
-                 and not any(h["owner"] == p["id"] for h in self.holes)]
+        bare = [p for p in self.parts if not p.get("anc") and not ign.search(p["name"])
+                and not any(h["owner"] == p["id"] for h in self.holes)]
+        loose = [where(p) for p in bare if not article(p["name"])]
+        onsite = sorted(set(disp(p["name"]) for p in bare if article(p["name"])))
+        if onsite:
+            self.add("M08", INFO, "Фурнитура без присадки в модели: ставится по месту", onsite)
         if loose:
             self.add("M06", WARN, "Объекты верхнего уровня без свойств панели и без присадки", loose,
                      "Тело после булевой операции выпадает из раскроя и сметы. Фурнитуру ставить из библиотеки, а не рисовать.")
@@ -618,12 +622,16 @@ class Review:
             rest = [ov[i] for i in range(3) if i != touch[0]]
             if min(rest) < 3 or max(rest) < jc["min_len"] or min(rest) > 60:
                 continue
+            if a["_tax"] == b["_tax"] and touch[0] != a["_tax"]:
+                continue        # детали в одной плоскости встык торцами (боковины ярусов): их держат соседние детали
             n = linked.get(tuple(sorted((a["id"], b["id"]))), 0)
             name = "%s и %s, стык %s мм" % (disp(a["name"]), disp(b["name"]), fmt(max(rest)))
             if n == 0:
                 none.append(name)
             else:
                 need = next(c for lim, c in jc["count_by_len"] if max(rest) <= lim)
+                if "shelf" in (a.get("role"), b.get("role")):
+                    need = min(need, jc["shelf_supports_per_side"])      # полка лежит на двух полкодержателях с каждой стороны
                 if n < need:
                     few.append("%s: крепежа %s, по длине нужно %s" % (name, n, need))
         if none:
@@ -650,6 +658,8 @@ class Review:
                     if p["id"] in drilled or p["_rot"]:
                         continue
                     ov = overlap(part, p)
+                    if all(v > hw["clash_depth"] for v in ov) and self._in_foreign_hole(part, p):
+                        continue        # сидит в отверстии, которое сверлит ответная часть (гайка межсекционной стяжки)
                     if all(v > hw["clash_depth"] for v in ov):
                         line = "%s (%s) входит в %s на %s мм" % (disp(u["name"]), disp(part["name"]), where(p),
                                                                  " x ".join(fmt(v) for v in ov))
@@ -693,7 +703,7 @@ class Review:
             vertical = b.get("anim") in ("DoorLeft", "DoorRight")
             length, width = (e[1], e[0]) if vertical else (e[0], e[1])
             need = next(c for lim, c in hw["hinge_count_by_height"] if length <= lim)
-            if vertical and width > self.cfg["geometry"]["door_max_width"]:
+            if vertical and width > hw["hinge_extra_from_width"]:
                 need += 1
             label = "%s %s x %s" % (disp(b["name"]), fmt(e[0]), fmt(e[1]))
             if not mine:
@@ -711,7 +721,7 @@ class Review:
                      "Поставить петли из библиотеки. Если петли названы иначе, дописать имя в hardware.hinge_re.")
         if few_h:
             self.add("F06", WARN, "Петель меньше, чем нужно по высоте и ширине двери", few_h,
-                     "Норма по высоте: до 900 2, до 1600 3, до 2000 4, до 2400 5. Дверь шире 600: плюс одна.")
+                     "Норма по высоте: до 900 2, до 1600 3, до 2000 4, до 2400 5. Дверь шире %s: плюс одна." % hw["hinge_extra_from_width"])
         if pos_h:
             self.add("F07", WARN, "Крайняя петля вне %s..%s мм от края двери" % (lo, hi), pos_h, "Сдвинуть петлю.")
         # ящики
@@ -750,6 +760,54 @@ class Review:
         else:
             self.add("F09", WARN, "В модели нет фурнитуры и крепежа", fix="Корпус нечем собрать: поставить крепёж.")
 
+    def _in_foreign_hole(self, part, p):
+        for h in self.holes:
+            if h.get("panel") is p and all(part["min"][i] - 2 <= h["p"][i] <= part["max"][i] + 2 for i in range(3)):
+                return True
+        return False
+
+    # ---------- справочные тела ----------
+    def check_reference(self):
+        rc = self.cfg.get("reference")
+        if not rc or not self.bounds:
+            return
+        rre = re.compile(rc["re"], re.I)
+        refs = [p for p in self.parts if rre.search(p["name"])]
+        cut_ref = [where(p) for p in self.panels if rre.search(p["name"])]
+        if cut_ref:
+            self.add("R03", ERROR, "Справочная деталь сделана панелью: она уйдёт в распил", cut_ref,
+                     "Заменить на профиль (AddExtrusion) с тем же именем.")
+        lo, hi = rc["top_gap"]
+        tol = rc["flush_tol"]
+        b = self.bounds
+        for r in refs:
+            name = disp(r["name"])
+            ov_x = min(r["max"][0], b["max"][0]) - max(r["min"][0], b["min"][0])
+            ov_z = min(r["max"][2], b["max"][2]) - max(r["min"][2], b["min"][2])
+            if r["max"][1] > b["max"][1] and ov_x > 0 and ov_z > 0:                 # тело над изделием (или изделие в него упирается)
+                gap = r["min"][1] - b["max"][1]
+                if gap < 0:
+                    self.add("R01", ERROR, "Изделие упирается в «%s»: выше на %s мм" % (name, fmt(-gap)),
+                             fix="Уменьшить высоту изделия: заданный габарит помещения не меняется.")
+                elif not (lo <= gap <= hi):
+                    self.add("R01", WARN, "Зазор до «%s» %s мм, норма %s..%s" % (name, fmt(gap), lo, hi),
+                             fix="Меньше нормы: изделие может не войти при установке. Больше: видна широкая щель.")
+                else:
+                    self.add("R01", INFO, "Зазор до «%s»: %s мм" % (name, fmt(gap)))
+                # сверяются только те грани тела, которые идут рядом с гранью изделия (планка может быть
+                # лицевой или боковой, её дальняя грань к изделию отношения не имеет)
+                off = []
+                near = rc.get("flush_near", 50)
+                for label, i, key in (("лицо", 2, "max"), ("зад", 2, "min"), ("левый край", 0, "min"), ("правый край", 0, "max")):
+                    d = abs(r[key][i] - b[key][i])
+                    if tol < d <= near:
+                        off.append("%s: тело на %s, изделие на %s" % (label, fmt(r[key][i]), fmt(b[key][i])))
+                if off:
+                    self.add("R02", WARN, "Изделие не вровень с «%s»" % name, off,
+                             "Совместить плоскости или подтвердить, что так задумано.")
+            else:
+                self.add("R04", INFO, "Справочное тело «%s» не над изделием: не сверялось" % name)
+
     # ---------- позиции ----------
     def check_positions(self):
         if self.unchecked("P00", "Позиции", ["art"]):
@@ -772,7 +830,7 @@ class Review:
         self.check_model()
         if self.cut:
             for fn in (self.check_geometry, self.check_materials, self.check_edges, self.check_holes,
-                       self.check_joints, self.check_hardware, self.check_positions):
+                       self.check_joints, self.check_hardware, self.check_reference, self.check_positions):
                 try:
                     fn()
                 except Exception as e:  # правило упало: это невыполненная проверка, а не чистый результат
