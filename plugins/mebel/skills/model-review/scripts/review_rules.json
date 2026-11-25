@@ -69,12 +69,19 @@
     "hinge_re": "петл|hinge|clip|pivot|sensys|blumotion",
     "slide_re": "направляющ|slide|motion|tandem|movento|versalite|quadro|метабокс|metabox|тандембокс|legrabox|шариков",
     "handle_re": "ручк|handle|gola|скоб",
-    "ignore_re": "габаритн|рамка",
+    "ignore_re": "габаритн|рамка|справочно",
     "outside_tol": 60,
     "hinge_count_by_height": [[900, 2], [1600, 3], [2000, 4], [2400, 5], [100000, 6]],
     "hinge_edge_distance": [70, 190],
     "hinge_extra_from_width": 650,
     "article_re": "\\r\\s*\\S|[A-Za-zА-Яа-я]*\\d{2,}"
+  },
+
+  "reference": {
+    "re": "^\\s*справочно",
+    "top_gap": [3, 10],
+    "flush_tol": 0.5,
+    "_note": "Справочные тела: соседние конструкции, к которым изделие должно подходить (закладная потолка, стена, соседний корпус). Имя начинается со слова СПРАВОЧНО, делать профилем, а не панелью. Ревью сверяет зазор до тела над изделием и совпадение плоскостей."
   },
 
   "names": {

@@ -366,6 +366,45 @@ class ModelAndPositions(unittest.TestCase):
         self.assertFalse(rv.verdict(fs)[0])
 
 
+class Reference(unittest.TestCase):
+    """Справочное тело над изделием: закладная потолка. Эталонный шкаф 800 x 2000, фасад на z 518."""
+
+    def ref(self, **kw):
+        r = {"id": "uRef", "path": "99", "name": "СПРАВОЧНО: Закладная потолка (не изготавливать)", "anc": [],
+             "min": [0, 2005, 502], "max": [800, 2083, 518]}
+        r.update(kw)
+        return r
+
+    def test_good_gap_and_flush(self):
+        d = data(); d["parts"].append(self.ref())
+        f, ready, r = run(d)
+        self.assertEqual(f["R01"].sev, rv.INFO)
+        self.assertNotIn("R02", f); self.assertNotIn("M06", f); self.assertTrue(ready)
+        self.assertFalse(any("СПРАВОЧНО" in row[0] for row in r.hardware()))     # в ведомость фурнитуры не идёт
+
+    def test_gap_too_big_or_too_small(self):
+        d = data(); d["parts"].append(self.ref(min=[0, 2020, 502], max=[800, 2098, 518]))
+        self.assertEqual(run(d)[0]["R01"].sev, rv.WARN)
+        d = data(); d["parts"].append(self.ref(min=[0, 2001, 502], max=[800, 2079, 518]))
+        self.assertEqual(run(d)[0]["R01"].sev, rv.WARN)
+
+    def test_product_higher_than_reference_blocks(self):
+        d = data(); d["parts"].append(self.ref(min=[0, 1990, 520], max=[800, 2068, 536]))
+        f, ready, _ = run(d)
+        self.assertEqual(f["R01"].sev, rv.ERROR); self.assertFalse(ready)
+
+    def test_not_flush(self):
+        d = data(); d["parts"].append(self.ref(min=[20, 2005, 480], max=[800, 2083, 496]))
+        f, _, _ = run(d)
+        self.assertEqual(len(f["R02"].items), 2)       # лицо и левый край
+
+    def test_reference_as_panel_goes_to_cutting(self):
+        d = data(); p = copy.deepcopy(panel(d, "Крышка"))
+        p.update(id="uRp", name="СПРАВОЧНО: Закладная", min=[0, 2005, 502], max=[800, 2083, 518], art="9", edges=[])
+        d["panels"].append(p)
+        self.assertIn("R03", run(d)[0])
+
+
 class Outputs(unittest.TestCase):
     def test_cutlist_grain(self):
         d = data(); p = panel(d, "Цоколь"); p["tex"] = 2      # текстура вдоль ch (70), хотя деталь длиной 768

@@ -766,6 +766,45 @@ class Review:
                 return True
         return False
 
+    # ---------- справочные тела ----------
+    def check_reference(self):
+        rc = self.cfg.get("reference")
+        if not rc or not self.bounds:
+            return
+        rre = re.compile(rc["re"], re.I)
+        refs = [p for p in self.parts if rre.search(p["name"])]
+        cut_ref = [where(p) for p in self.panels if rre.search(p["name"])]
+        if cut_ref:
+            self.add("R03", ERROR, "Справочная деталь сделана панелью: она уйдёт в распил", cut_ref,
+                     "Заменить на профиль (AddExtrusion) с тем же именем.")
+        lo, hi = rc["top_gap"]
+        tol = rc["flush_tol"]
+        b = self.bounds
+        for r in refs:
+            name = disp(r["name"])
+            ov_x = min(r["max"][0], b["max"][0]) - max(r["min"][0], b["min"][0])
+            if r["max"][1] > b["max"][1] and ov_x > 0:                 # тело над изделием (или изделие в него упирается)
+                gap = r["min"][1] - b["max"][1]
+                if gap < 0:
+                    self.add("R01", ERROR, "Изделие упирается в «%s»: выше на %s мм" % (name, fmt(-gap)),
+                             fix="Уменьшить высоту изделия: заданный габарит помещения не меняется.")
+                elif not (lo <= gap <= hi):
+                    self.add("R01", WARN, "Зазор до «%s» %s мм, норма %s..%s" % (name, fmt(gap), lo, hi),
+                             fix="Меньше нормы: изделие может не войти при установке. Больше: видна широкая щель.")
+                else:
+                    self.add("R01", INFO, "Зазор до «%s»: %s мм" % (name, fmt(gap)))
+                off = []
+                if abs(r["max"][2] - b["max"][2]) > tol:
+                    off.append("лицо: тело на %s, фасад на %s по глубине" % (fmt(r["max"][2]), fmt(b["max"][2])))
+                for side, i, key in (("левый край", 0, "min"), ("правый край", 0, "max")):
+                    if abs(r[key][i] - b[key][i]) > tol:
+                        off.append("%s: тело на %s, изделие на %s" % (side, fmt(r[key][i]), fmt(b[key][i])))
+                if off:
+                    self.add("R02", WARN, "Изделие не вровень с «%s»" % name, off,
+                             "Совместить плоскости или подтвердить, что так задумано.")
+            else:
+                self.add("R04", INFO, "Справочное тело «%s» не над изделием: не сверялось" % name)
+
     # ---------- позиции ----------
     def check_positions(self):
         if self.unchecked("P00", "Позиции", ["art"]):
@@ -788,7 +827,7 @@ class Review:
         self.check_model()
         if self.cut:
             for fn in (self.check_geometry, self.check_materials, self.check_edges, self.check_holes,
-                       self.check_joints, self.check_hardware, self.check_positions):
+                       self.check_joints, self.check_hardware, self.check_reference, self.check_positions):
                 try:
                     fn()
                 except Exception as e:  # правило упало: это невыполненная проверка, а не чистый результат
