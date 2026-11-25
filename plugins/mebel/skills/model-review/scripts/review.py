@@ -783,7 +783,8 @@ class Review:
         for r in refs:
             name = disp(r["name"])
             ov_x = min(r["max"][0], b["max"][0]) - max(r["min"][0], b["min"][0])
-            if r["max"][1] > b["max"][1] and ov_x > 0:                 # тело над изделием (или изделие в него упирается)
+            ov_z = min(r["max"][2], b["max"][2]) - max(r["min"][2], b["min"][2])
+            if r["max"][1] > b["max"][1] and ov_x > 0 and ov_z > 0:                 # тело над изделием (или изделие в него упирается)
                 gap = r["min"][1] - b["max"][1]
                 if gap < 0:
                     self.add("R01", ERROR, "Изделие упирается в «%s»: выше на %s мм" % (name, fmt(-gap)),
@@ -793,12 +794,14 @@ class Review:
                              fix="Меньше нормы: изделие может не войти при установке. Больше: видна широкая щель.")
                 else:
                     self.add("R01", INFO, "Зазор до «%s»: %s мм" % (name, fmt(gap)))
+                # сверяются только те грани тела, которые идут рядом с гранью изделия (планка может быть
+                # лицевой или боковой, её дальняя грань к изделию отношения не имеет)
                 off = []
-                if abs(r["max"][2] - b["max"][2]) > tol:
-                    off.append("лицо: тело на %s, фасад на %s по глубине" % (fmt(r["max"][2]), fmt(b["max"][2])))
-                for side, i, key in (("левый край", 0, "min"), ("правый край", 0, "max")):
-                    if abs(r[key][i] - b[key][i]) > tol:
-                        off.append("%s: тело на %s, изделие на %s" % (side, fmt(r[key][i]), fmt(b[key][i])))
+                near = rc.get("flush_near", 50)
+                for label, i, key in (("лицо", 2, "max"), ("зад", 2, "min"), ("левый край", 0, "min"), ("правый край", 0, "max")):
+                    d = abs(r[key][i] - b[key][i])
+                    if tol < d <= near:
+                        off.append("%s: тело на %s, изделие на %s" % (label, fmt(r[key][i]), fmt(b[key][i])))
                 if off:
                     self.add("R02", WARN, "Изделие не вровень с «%s»" % name, off,
                              "Совместить плоскости или подтвердить, что так задумано.")

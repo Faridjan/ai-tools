@@ -389,7 +389,7 @@ class Reference(unittest.TestCase):
         self.assertEqual(run(d)[0]["R01"].sev, rv.WARN)
 
     def test_product_higher_than_reference_blocks(self):
-        d = data(); d["parts"].append(self.ref(min=[0, 1990, 520], max=[800, 2068, 536]))
+        d = data(); d["parts"].append(self.ref(min=[0, 1990, 502], max=[800, 2068, 518]))
         f, ready, _ = run(d)
         self.assertEqual(f["R01"].sev, rv.ERROR); self.assertFalse(ready)
 
@@ -397,6 +397,14 @@ class Reference(unittest.TestCase):
         d = data(); d["parts"].append(self.ref(min=[20, 2005, 480], max=[800, 2083, 496]))
         f, _, _ = run(d)
         self.assertEqual(len(f["R02"].items), 2)       # лицо и левый край
+
+    def test_side_strip_of_the_ceiling_frame(self):
+        # боковая планка закладной над видимой боковиной: её правая грань далеко от правого края шкафа, это не ошибка
+        d = data(); d["parts"].append(self.ref()); d["parts"].append(self.ref(id="uRef2", min=[0, 2005, -3], max=[16, 2083, 518]))
+        f, ready, _ = run(d)
+        self.assertNotIn("R02", f); self.assertTrue(ready)
+        d = data(); d["parts"].append(self.ref(id="uRef2", min=[4, 2005, -3], max=[20, 2083, 518]))
+        self.assertTrue(any("левый край" in s for s in run(d)[0]["R02"].items))
 
     def test_reference_as_panel_goes_to_cutting(self):
         d = data(); p = copy.deepcopy(panel(d, "Крышка"))
